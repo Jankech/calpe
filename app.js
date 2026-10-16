@@ -553,18 +553,6 @@ async function clearTestData(){if(!confirm('Zmazať všetky TEST jazdy a drinky?
 function openSheet(id){$('sheetBackdrop').classList.add('show');$(id).classList.add('show');$(id).setAttribute('aria-hidden','false');document.body.classList.add('sheet-open');}
 function closeSheets(){$('sheetBackdrop').classList.remove('show');$$('.bottom-sheet').forEach(x=>{x.classList.remove('show');x.setAttribute('aria-hidden','true');});document.body.classList.remove('sheet-open');S.rideEditing=false;}
 
-/* ===== PLATBY v3 ===== */
-.pay-extra{margin-top:12px}
-.pay-actions{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;padding-left:44px;margin-top:4px}
-.pay-actions>button{border:1px solid #d6e1e5;background:#f4f8f9;color:#31586a;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:850;display:inline-flex;align-items:center;gap:4px}
-.pay-actions>button svg{width:13px;height:13px}
-.pay-actions>button.rev{background:#0b0b0b;color:#fff;border-color:#0b0b0b}
-.pay-detail{flex-basis:100%;margin-top:6px}
-.pay-qr{width:220px;max-width:100%;background:#fff;border-radius:14px;padding:6px;border:1px solid #e1e8ec}
-.pay-qr svg{width:100%;height:auto;display:block}
-4. app.js: paste above the line init();
-Near the end of the file there is a line containing only init();. Put this block above it, not after the final })();, because it needs access to the app's internal functions.
-
 /* ===== PLATBY v3: BIC, Revolut, QR ===== */
 const _origAccount=renderAccountSettings, _origSettlement=renderSettlement;
 const cleanBIC=v=>String(v||'').toUpperCase().replace(/\s+/g,'');
