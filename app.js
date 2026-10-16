@@ -586,23 +586,33 @@ function qrSvg(text){
 renderSettlement=function(){
   _origSettlement();
   const rows=$$('#settlementTransfers .transfer'),tr=transfers(balances());
+  const myId=S.me?.id,isAdmin=S.me?.role==='admin';
   rows.forEach((row,i)=>{const x=tr[i];if(!x)return;const to=participant(x.to),from=participant(x.from);
     row.querySelector('.iban-transfer')?.remove();
     const iban=normalizeIBAN(to?.iban),rev=cleanRev(to?.revolut);
-    if(!iban&&!rev)return;
+    const canMark=isAdmin||myId===x.from||myId===x.to;
+    if(!iban&&!rev&&!canMark)return;
     const a=document.createElement('div');a.className='pay-actions';
-    a.innerHTML=`${iban?`<button type="button" data-a="iban">${icon('copy')} IBAN</button>`:''}<button type="button" data-a="amt">${icon('copy')} ${amt(x.amount)} €</button>${rev?`<button type="button" data-a="rev" class="rev">Revolut</button>`:''}${iban?`<button type="button" data-a="qr">QR</button>`:''}<div class="pay-detail" hidden></div>`;
+    a.innerHTML=`${iban?`<button type="button" data-a="iban">${icon('copy')} IBAN</button>`:''}${to?.bic?`<button type="button" data-a="bic">${icon('copy')} BIC</button>`:''}<button type="button" data-a="amt">${icon('copy')} ${amt(x.amount)} €</button>${rev?`<button type="button" data-a="rev" class="rev">Revolut</button>`:''}${iban?`<button type="button" data-a="qr">QR</button>`:''}${canMark?`<button type="button" data-a="paid" class="paid">${icon('check')} Zaplatené</button>`:''}<div class="pay-detail" hidden></div>`;
     row.appendChild(a);
     const det=a.querySelector('.pay-detail');
-    a.onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.a;
+    a.onclick=async e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.a;
       if(k==='iban')copyText(iban,'IBAN skopírovaný');
+      if(k==='bic')copyText(cleanBIC(to.bic),'BIC skopírovaný');
       if(k==='amt')copyText(amt(x.amount),'Suma skopírovaná');
       if(k==='rev'){copyText(amt(x.amount),'Suma skopírovaná – vlož ju v Revolute');window.open('https://revolut.me/'+encodeURIComponent(rev),'_blank','noopener');}
       if(k==='qr'){if(!det.hidden){det.hidden=true;return;}const svg=qrSvg(epcPayload(to,x.amount,from));
         det.innerHTML=svg?`<div class="pay-qr">${svg}</div><p class="media-hint"><b>${esc(to.name)}</b> · ${esc(formatIBAN(iban))}${to.bic?' · '+esc(cleanBIC(to.bic)):''} · <b>${amt(x.amount)} €</b><br>Naskenuj v bankovej appke (SEPA QR). Pred potvrdením skontroluj meno, IBAN a sumu.</p>`:`<p class="media-hint">QR knižnica sa nenačítala.</p>`;det.hidden=false;}
+      if(k==='paid'){
+        if(!confirm(`Zapísať platbu ${amt(x.amount)} € od ${from?.name} pre ${to?.name}?`))return;
+        b.disabled=true;
+        try{const{error}=await S.client.from('payments').insert({trip_id:S.tripId,payment_date:new Date().toLocaleDateString('sv-SE'),from_participant:x.from,to_participant:x.to,amount:Number(amt(x.amount)),currency_code:'EUR',note:'Vyrovnanie (z prehľadu)'});
+          if(error)throw error;await loadAllData();toast('Platba zapísaná ✓');}
+        catch(err){b.disabled=false;toast(err.message,true);}
+      }
     };
   });
-};  
+}; 
   
 init();
 })();
