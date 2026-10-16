@@ -683,7 +683,7 @@ function addReceiptInput(){
   const form=$('expenseForm');if(!form||$('expReceipt'))return;
   const btn=form.querySelector('button[type=submit]');
   const w=document.createElement('div');w.className='rcpt-new';
-  w.innerHTML=`<label class="secondary rcpt-pick">${icon('camera')} <span id="expReceiptLabel">Pridať účtenku</span><input id="expReceipt" type="file" accept="image/*" capture="environment" hidden></label>`;
+  w.innerHTML=`<label class="secondary rcpt-pick">${icon('camera')} <span id="expReceiptLabel">Pridať účtenku</span><input id="expReceipt" type="file" accept="image/*" hidden></label>`;
   form.insertBefore(w,btn);
   $('expReceipt').onchange=e=>{$('expReceiptLabel').textContent=e.target.files?.[0]?'✓ Účtenka pripravená':'Pridať účtenku';};
 }
@@ -703,7 +703,7 @@ renderExpenseEdit=function(x){
   _origRenderExpenseEdit(x);
   const form=$('expenseEditForm'),act=form.querySelector('.sheet-actions');
   const box=document.createElement('div');box.className='rcpt-box';
-  box.innerHTML=`<label>Účtenka</label><div class="rcpt-view" id="rcptView">${x.receipt_path?'<div class="empty">Načítavam…</div>':'<div class="empty">Bez účtenky</div>'}</div><div class="media-actions"><label class="secondary rcpt-pick">${icon('camera')} ${x.receipt_path?'Vymeniť':'Pridať'}<input id="editReceipt" type="file" accept="image/*" capture="environment" hidden></label>${x.receipt_path?`<button type="button" class="danger" id="delReceipt">${icon('trash')} Odstrániť</button>`:''}</div>`;
+  box.innerHTML=`<label>Účtenka</label><div class="rcpt-view" id="rcptView">${x.receipt_path?'<div class="empty">Načítavam…</div>':'<div class="empty">Bez účtenky</div>'}</div><div class="media-actions"><label class="secondary rcpt-pick">${icon('camera')} ${x.receipt_path?'Vymeniť':'Pridať'}<input id="editReceipt" type="file" accept="image/*" hidden></label>${x.receipt_path?`<button type="button" class="danger" id="delReceipt">${icon('trash')} Odstrániť</button>`:''}</div>`;
   form.insertBefore(box,act);
   if(x.receipt_path)S.client.storage.from(MEDIA_BUCKET).createSignedUrl(x.receipt_path,3600).then(({data,error})=>{const v=$('rcptView');if(!v)return;
     v.innerHTML=error||!data?.signedUrl?'<div class="empty">Účtenku sa nepodarilo načítať.</div>':`<a href="${esc(data.signedUrl)}" target="_blank" rel="noopener"><img src="${esc(data.signedUrl)}" alt="Účtenka"></a>`;});
