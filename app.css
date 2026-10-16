@@ -115,11 +115,13 @@ body.kb-open .toast{bottom:calc(var(--kb,0px) + 14px)}
 .pay-qr{width:220px;max-width:100%;background:#fff;border-radius:14px;padding:6px;border:1px solid #e1e8ec}
 .pay-qr svg{width:100%;height:auto;display:block}
 
-/* ===== FIX v4: dátumy na iPhone ===== */
-.form-grid>*,.form-grid label{min-width:0}
+/* ===== FIX v5: dátumy na iPhone ===== */
+.form-grid>*,.form-grid label{min-width:0;overflow:hidden;padding:0 3px 3px}
 input[type=date],input[type=time],input[type=datetime-local]{
   -webkit-appearance:none;appearance:none;display:block;
-  min-width:0;max-width:100%;width:100%;text-align:left}
+  width:100%;max-width:100%;min-width:0;
+  -webkit-min-logical-width:calc(100% - 16px);
+  text-align:left;background:#fff}
 input[type=date]::-webkit-date-and-time-value,
 input[type=time]::-webkit-date-and-time-value,
 input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;margin:0}
