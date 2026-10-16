@@ -187,3 +187,13 @@ main,.view{max-width:100%;overflow-x:hidden}
 #view-more .form-grid>*,#view-more .iban-row>*{min-width:0}
 #view-more .stay-dates label,#view-more .iban-row label{overflow:hidden;padding:0 3px 3px}
 #view-more small,#view-more code{overflow-wrap:anywhere}
+
+/* ===== FIX v10: administrácia bez bočného posunu ===== */
+.toggle-row{position:relative}
+.toggle-row input{width:1px!important;height:1px!important;min-height:0!important;padding:0!important;margin:0!important;left:0;top:0;border:0}
+#view-more .stay-card,#view-more .stay-list,#view-more .settings-panel,#view-more .admin-block{min-width:0;max-width:100%}
+#view-more .stay-dates{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#view-more .score-admin-grid,#view-more .score-podium-grid,#view-more .admin-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#view-more .score-podium-grid label{grid-template-columns:30px minmax(0,1fr)}
+#view-more .score-admin-grid>*,#view-more .score-podium-grid>*,#view-more .score-podium-grid label>*,#view-more .admin-actions>*{min-width:0}
+#view-more .admin-actions button{white-space:normal;line-height:1.2;padding:6px 8px}
