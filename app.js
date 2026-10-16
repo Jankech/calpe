@@ -555,3 +555,16 @@ function closeSheets(){$('sheetBackdrop').classList.remove('show');$$('.bottom-s
 
 init();
 })();
+/* ---------- FIX v2: klávesnica + zákaz zoomu ---------- */
+try{(function(){
+  const root=document.documentElement,vv=window.visualViewport;
+  function upd(){const h=vv?vv.height:innerHeight,kb=vv?Math.max(0,innerHeight-vv.height-vv.offsetTop):0;
+    root.style.setProperty('--vvh',h+'px');root.style.setProperty('--kb',kb+'px');
+    const f=document.activeElement,typing=f&&f.matches&&f.matches('input:not([type=checkbox]):not([type=radio]):not([type=file]),textarea,select');
+    document.body.classList.toggle('kb-open',!!typing&&(kb>80||!vv));}
+  if(vv){vv.addEventListener('resize',upd);vv.addEventListener('scroll',upd);}
+  document.addEventListener('focusin',e=>{upd();if(e.target.matches&&e.target.matches('input,textarea,select'))setTimeout(()=>{upd();e.target.scrollIntoView({block:'center',behavior:'smooth'});},300);});
+  document.addEventListener('focusout',()=>setTimeout(upd,150));
+  ['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
+  upd();
+})();}catch(e){console.warn('kb fix',e);}
