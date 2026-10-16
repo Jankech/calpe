@@ -593,7 +593,7 @@ renderSettlement=function(){
     const canMark=isAdmin||myId===x.from||myId===x.to;
     if(!iban&&!rev&&!canMark)return;
     const a=document.createElement('div');a.className='pay-actions';
-    a.innerHTML=`${iban?`<button type="button" data-a="iban">${icon('copy')} IBAN</button>`:''}${to?.bic?`<button type="button" data-a="bic">${icon('copy')} BIC</button>`:''}<button type="button" data-a="amt">${icon('copy')} ${amt(x.amount)} €</button>${rev?`<button type="button" data-a="rev" class="rev">Revolut</button>`:''}${iban?`<button type="button" data-a="qr">QR</button>`:''}${canMark?`<button type="button" data-a="paid" class="paid">${icon('check')} Zaplatené</button>`:''}<div class="pay-detail" hidden></div>`;
+    a.innerHTML=`${iban?`<button type="button" data-a="iban">${icon('copy')} IBAN</button>`:''}${to?.bic?`<button type="button" data-a="bic">${icon('copy')} BIC</button>`:''}<button type="button" data-a="amt">${icon('copy')} ${amt(x.amount)} €</button>${rev?`<button type="button" data-a="rev" class="rev">Revolut</button>`:''}${iban?`<button type="button" data-a="qr">QR</button>`:''}${canMark?`<button type="button" data-a="paid" class="paid">${icon('check')} Zapísať platbu</button>`:''}<div class="pay-detail" hidden></div>`;
     row.appendChild(a);
     const det=a.querySelector('.pay-detail');
     a.onclick=async e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.a;
@@ -604,7 +604,7 @@ renderSettlement=function(){
       if(k==='qr'){if(!det.hidden){det.hidden=true;return;}const svg=qrSvg(epcPayload(to,x.amount,from));
         det.innerHTML=svg?`<div class="pay-qr">${svg}</div><p class="media-hint"><b>${esc(to.name)}</b> · ${esc(formatIBAN(iban))}${to.bic?' · '+esc(cleanBIC(to.bic)):''} · <b>${amt(x.amount)} €</b><br>Naskenuj v bankovej appke (SEPA QR). Pred potvrdením skontroluj meno, IBAN a sumu.</p>`:`<p class="media-hint">QR knižnica sa nenačítala.</p>`;det.hidden=false;}
       if(k==='paid'){
-        if(!confirm(`Zapísať platbu ${amt(x.amount)} € od ${from?.name} pre ${to?.name}?`))return;
+        if(!confirm(`Zaplatil(a) ${from?.name} už ${amt(x.amount)} € pre ${to?.name}?\n\nPo potvrdení sa platba zapíše do zoznamu Platby a dlh sa vyrovná. Platbu môžeš neskôr upraviť alebo zmazať v zozname Platby.`))return;
         b.disabled=true;
         try{const{error}=await S.client.from('payments').insert({trip_id:S.tripId,payment_date:new Date().toLocaleDateString('sv-SE'),from_participant:x.from,to_participant:x.to,amount:Number(amt(x.amount)),currency_code:'EUR',note:'Vyrovnanie (z prehľadu)'});
           if(error)throw error;await loadAllData();toast('Platba zapísaná ✓');}
@@ -613,7 +613,107 @@ renderSettlement=function(){
     };
   });
 }; 
-  
+/* ===== FEATURES v6: filtre + účtenky ===== */
+const FKEY='calpe-filters-v1';
+const F=Object.assign({exp:{cat:'',person:'',day:''},ride:{person:'',day:''},drink:{person:'',type:'',day:''}},JSON.parse(localStorage.getItem(FKEY)||'{}'));
+const saveF=()=>localStorage.setItem(FKEY,JSON.stringify(F));
+const optList=(arr,sel,all)=>`<option value="">${all}</option>`+arr.map(([v,l])=>`<option value="${esc(v)}" ${String(v)===String(sel)?'selected':''}>${esc(l)}</option>`).join('');
+const peopleOpts=sel=>optList(S.participants.map(p=>[p.id,p.name]),sel,'Všetci');
+const dayOpts=(days,sel)=>optList([...new Set(days.filter(Boolean))].sort().map(d=>[d,dateLabel(d)]),sel,'Deň');
+function filterBar(feedId,key,fields,info){
+  const feed=$(feedId);if(!feed)return;
+  let bar=document.getElementById('fbar-'+key);
+  if(!bar){bar=document.createElement('div');bar.id='fbar-'+key;bar.className='filter-bar';feed.parentNode.insertBefore(bar,feed);}
+  const active=Object.values(F[key]).some(Boolean);
+  bar.innerHTML=`<div class="filter-row">${fields}${active?`<button type="button" class="filter-clear" data-clear="${key}">${icon('close')}</button>`:''}</div>${active?`<div class="filter-info">${info}</div>`:''}`;
+  bar.querySelectorAll('select[data-f]').forEach(s=>s.onchange=()=>{F[key][s.dataset.f]=s.value;saveF();renderAll();});
+  const c=bar.querySelector('[data-clear]');if(c)c.onclick=()=>{Object.keys(F[key]).forEach(k=>F[key][k]='');saveF();renderAll();};
+}
+const withList=(prop,list,fn)=>{const all=S[prop];S[prop]=list;try{fn();}finally{S[prop]=all;}};
+
+/* --- Výdavky --- */
+const _origRenderExpenses=renderExpenses;
+renderExpenses=function(){
+  const f=F.exp,list=S.expenses.filter(x=>(!f.cat||String(x.category_id)===f.cat)&&(!f.person||x.paid_by===f.person||(x.participant_ids||[]).includes(f.person))&&(!f.day||x.expense_date===f.day));
+  withList('expenses',list,_origRenderExpenses);
+  const total=list.reduce((s,x)=>s+centsEUR(x.amount,x.currency_code),0);
+  filterBar('expenseFeed','exp',
+    `<select data-f="cat">${optList(S.categories.map(c=>[c.id,c.name]),f.cat,'Kategória')}</select><select data-f="person">${optList(S.participants.map(p=>[p.id,p.name]),f.person,'Osoba')}</select><select data-f="day">${dayOpts(S.expenses.map(x=>x.expense_date),f.day)}</select>`,
+    `${list.length} z ${S.expenses.length} · spolu ${eur(total)}`);
+  list.forEach(x=>{if(!x.receipt_path)return;const b=document.querySelector(`#expenseFeed .expense-open[data-id="${x.id}"] .feed-copy b`);if(b&&!b.querySelector('.rcpt-mark'))b.insertAdjacentHTML('beforeend',' <span class="rcpt-mark" title="Účtenka">🧾</span>');});
+};
+/* --- Jazdy --- */
+const _origRenderRides=renderRides;
+renderRides=function(){
+  const f=F.ride,list=S.rides.filter(r=>(!f.person||(r.participant_ids||[]).includes(f.person))&&(!f.day||r.ride_date===f.day));
+  withList('rides',list,_origRenderRides);
+  const km=list.reduce((s,r)=>s+Number(r.distance_km||0),0),el=list.reduce((s,r)=>s+Number(r.elevation_m||0),0);
+  filterBar('rideFeed','ride',`<select data-f="person">${optList(S.participants.map(p=>[p.id,p.name]),f.person,'Jazdec')}</select><select data-f="day">${dayOpts(S.rides.map(r=>r.ride_date),f.day)}</select>`,
+    `${list.length} z ${S.rides.length} jázd · ${round(km,1)} km · ${round(el)} m`);
+};
+/* --- Drinky --- */
+const _origRenderDrinks=renderDrinks;
+renderDrinks=function(st){
+  const f=F.drink,list=S.drinks.filter(d=>(!f.person||d.participant_id===f.person)&&(!f.type||Number(d[f.type])>0)&&(!f.day||tripDateFromISO(d.consumed_at)===f.day));
+  withList('drinks',list,()=>_origRenderDrinks(st));
+  const n=list.reduce((s,d)=>s+(f.type?Number(d[f.type]||0):Number(d.beer||0)+Number(d.wine||0)+Number(d.spirits||0)),0);
+  filterBar('drinkFeed','drink',`<select data-f="person">${optList(S.participants.map(p=>[p.id,p.name]),f.person,'Osoba')}</select><select data-f="type">${optList([['beer','Pivo'],['wine','Víno'],['spirits','Panák']],f.type,'Druh')}</select><select data-f="day">${dayOpts(S.drinks.map(d=>tripDateFromISO(d.consumed_at)),f.day)}</select>`,
+    `${list.length} záznamov · ${n} drinkov`);
+};
+
+/* --- Účtenky --- */
+const receiptPath=id=>`trips/${S.tripId}/receipts/${id}.webp`;
+async function receiptBlob(file){
+  if(!file||!String(file.type||'').startsWith('image/'))throw new Error('Vyber fotku účtenky.');
+  const url=URL.createObjectURL(file);
+  try{const img=await new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ko(new Error('Fotku sa nepodarilo načítať.'));i.src=url;});
+    const k=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.round(img.naturalWidth*k),h=Math.round(img.naturalHeight*k);
+    const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
+    const blob=await new Promise(r=>c.toBlob(r,'image/webp',.8))||await new Promise(r=>c.toBlob(r,'image/jpeg',.8));
+    if(!blob)throw new Error('Fotku sa nepodarilo spracovať.');return blob;
+  }finally{URL.revokeObjectURL(url);}
+}
+async function uploadReceipt(expenseId,file){
+  toast('Nahrávam účtenku…');
+  const blob=await receiptBlob(file),path=receiptPath(expenseId);
+  const up=await S.client.storage.from(MEDIA_BUCKET).upload(path,blob,{upsert:true,contentType:blob.type,cacheControl:'60'});if(up.error)throw up.error;
+  const{error}=await S.client.from('expenses').update({receipt_path:path}).eq('id',expenseId).eq('trip_id',S.tripId);if(error)throw error;
+}
+function addReceiptInput(){
+  const form=$('expenseForm');if(!form||$('expReceipt'))return;
+  const btn=form.querySelector('button[type=submit]');
+  const w=document.createElement('div');w.className='rcpt-new';
+  w.innerHTML=`<label class="secondary rcpt-pick">${icon('camera')} <span id="expReceiptLabel">Pridať účtenku</span><input id="expReceipt" type="file" accept="image/*" capture="environment" hidden></label>`;
+  form.insertBefore(w,btn);
+  $('expReceipt').onchange=e=>{$('expReceiptLabel').textContent=e.target.files?.[0]?'✓ Účtenka pripravená':'Pridať účtenku';};
+}
+saveNewExpense=async function(e){
+  e.preventDefault();try{
+    const ids=selectedIds('expParticipants'),amount=Number($('expAmount').value);if(!(amount>0)||!ids.length)throw new Error('Zadaj sumu a aspoň jedného účastníka.');
+    const payload={trip_id:S.tripId,expense_date:$('expDate').value,category_id:$('expCategory').value||null,description:$('expDescription').value.trim(),amount,currency_code:$('expCurrency').value,paid_by:$('expPaidBy').value,participant_ids:ids,split_method:$('expSplit').value,custom_weights:readWeightInputs('expCustom')};
+    const{data,error}=await S.client.from('expenses').insert(payload).select('id').single();if(error)throw error;
+    const file=$('expReceipt')?.files?.[0];
+    if(file&&data?.id){try{await uploadReceipt(data.id,file);}catch(err){toast('Výdavok uložený, ale účtenka nie: '+err.message,true);}}
+    $('expDescription').value='';$('expAmount').value='';if($('expReceipt')){$('expReceipt').value='';$('expReceiptLabel').textContent='Pridať účtenku';}
+    $('newExpenseAccordion').open=false;await loadAllData();toast('Výdavok uložený.');
+  }catch(err){toast(err.message,true);}
+};
+const _origRenderExpenseEdit=renderExpenseEdit;
+renderExpenseEdit=function(x){
+  _origRenderExpenseEdit(x);
+  const form=$('expenseEditForm'),act=form.querySelector('.sheet-actions');
+  const box=document.createElement('div');box.className='rcpt-box';
+  box.innerHTML=`<label>Účtenka</label><div class="rcpt-view" id="rcptView">${x.receipt_path?'<div class="empty">Načítavam…</div>':'<div class="empty">Bez účtenky</div>'}</div><div class="media-actions"><label class="secondary rcpt-pick">${icon('camera')} ${x.receipt_path?'Vymeniť':'Pridať'}<input id="editReceipt" type="file" accept="image/*" capture="environment" hidden></label>${x.receipt_path?`<button type="button" class="danger" id="delReceipt">${icon('trash')} Odstrániť</button>`:''}</div>`;
+  form.insertBefore(box,act);
+  if(x.receipt_path)S.client.storage.from(MEDIA_BUCKET).createSignedUrl(x.receipt_path,3600).then(({data,error})=>{const v=$('rcptView');if(!v)return;
+    v.innerHTML=error||!data?.signedUrl?'<div class="empty">Účtenku sa nepodarilo načítať.</div>':`<a href="${esc(data.signedUrl)}" target="_blank" rel="noopener"><img src="${esc(data.signedUrl)}" alt="Účtenka"></a>`;});
+  $('editReceipt').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{await uploadReceipt(x.id,f);await loadAllData();const n=S.expenses.find(z=>z.id===x.id);if(n)renderExpenseEdit(n);toast('Účtenka uložená.');}catch(err){toast(err.message,true);}};
+  if($('delReceipt'))$('delReceipt').onclick=async()=>{if(!confirm('Odstrániť účtenku?'))return;try{await S.client.storage.from(MEDIA_BUCKET).remove([x.receipt_path]);const{error}=await S.client.from('expenses').update({receipt_path:null}).eq('id',x.id).eq('trip_id',S.tripId);if(error)throw error;await loadAllData();const n=S.expenses.find(z=>z.id===x.id);if(n)renderExpenseEdit(n);toast('Účtenka odstránená.');}catch(err){toast(err.message,true);}};
+};
+const _origDeleteExpense=deleteExpense;
+deleteExpense=async function(){const x=S.expenses.find(e=>e.id===S.expenseEditId);const p=x?.receipt_path;await _origDeleteExpense();if(p&&!S.expenses.find(e=>e.id===x.id))S.client.storage.from(MEDIA_BUCKET).remove([p]).catch(()=>{});};
+const _origRenderAllF=renderAll;
+renderAll=function(...a){const r=_origRenderAllF(...a);addReceiptInput();return r;};  
 init();
 })();
 /* ---------- FIX v2: klávesnica + zákaz zoomu ---------- */
