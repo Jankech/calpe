@@ -114,3 +114,14 @@ body.kb-open .toast{bottom:calc(var(--kb,0px) + 14px)}
 .pay-detail{flex-basis:100%;margin-top:6px}
 .pay-qr{width:220px;max-width:100%;background:#fff;border-radius:14px;padding:6px;border:1px solid #e1e8ec}
 .pay-qr svg{width:100%;height:auto;display:block}
+
+/* ===== FIX v4: dátumy na iPhone ===== */
+.form-grid>*,.form-grid label{min-width:0}
+input[type=date],input[type=time],input[type=datetime-local]{
+  -webkit-appearance:none;appearance:none;display:block;
+  min-width:0;max-width:100%;width:100%;text-align:left}
+input[type=date]::-webkit-date-and-time-value,
+input[type=time]::-webkit-date-and-time-value,
+input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;margin:0}
+.pay-actions>button.paid{background:#e7f6ec;color:#23784a;border-color:#bfe3cb}
+.pay-actions>button:disabled{opacity:.5}
