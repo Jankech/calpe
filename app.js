@@ -729,18 +729,15 @@ function calDaily(){
 function calChart(){
   const {days,per}=calDaily();if(!days.length)return '<div class="empty">Zatiaľ žiadne jazdy ani drinky.</div>';
   const people=S.participants.filter(p=>days.some(d=>per[p.id]?.[d]));
-  const series=people.map((p,i)=>({p,c:CAL_COLORS[i%CAL_COLORS.length],v:days.map(d=>{const x=per[p.id]?.[d];return x?Math.round(x.b-x.d):0;})}));
-  const all=series.flatMap(s=>s.v),max=Math.max(100,...all),min=Math.min(0,...all);
-  const W=340,H=200,L=40,R=12,T=12,B=26,xs=i=>L+(days.length===1?(W-L-R)/2:i*(W-L-R)/(days.length-1)),ys=v=>T+(max-v)*(H-T-B)/(max-min||1);
-  const ticks=[max,Math.round((max+min)/2),min].filter((v,i,a)=>a.indexOf(v)===i);
-  let svg=`<svg viewBox="0 0 ${W} ${H}" class="cal-svg">`;
-  ticks.forEach(t=>svg+=`<line x1="${L}" x2="${W-R}" y1="${ys(t)}" y2="${ys(t)}" class="${t===0?'zero':'grid'}"/><text x="${L-5}" y="${ys(t)+3}" text-anchor="end">${round(t)}</text>`);
-  if(min<0&&!ticks.includes(0))svg+=`<line x1="${L}" x2="${W-R}" y1="${ys(0)}" y2="${ys(0)}" class="zero"/>`;
-  days.forEach((d,i)=>svg+=`<text x="${xs(i)}" y="${H-8}" text-anchor="middle">${new Date(d+'T12:00:00').getDate()}.${new Date(d+'T12:00:00').getMonth()+1}.</text>`);
-  series.forEach(s=>{svg+=`<polyline fill="none" stroke="${s.c}" stroke-width="2.4" stroke-linejoin="round" points="${s.v.map((v,i)=>xs(i)+','+ys(v)).join(' ')}"/>`+s.v.map((v,i)=>`<circle cx="${xs(i)}" cy="${ys(v)}" r="3.2" fill="${s.c}"><title>${esc(s.p.name)} ${dateLabel(days[i])}: ${v>=0?'−':'+'}${round(Math.abs(v))} kcal</title></circle>`).join('');});
-  svg+='</svg>';
-  const legend=`<div class="cal-legend">${series.map(s=>`<span><i style="background:${s.c}"></i>${esc(s.p.name)}</span>`).join('')}</div>`;
-  return svg+legend+`<p class="media-hint">Denná bilancia: spálené jazdou mínus vypité. Nad nulou = deň „v pluse“ pre bicykel, pod nulou = vyhrali drinky.</p>`;
+  let maxB=1,maxD=1;people.forEach(p=>days.forEach(d=>{const x=per[p.id]?.[d];if(x){maxB=Math.max(maxB,x.b);maxD=Math.max(maxD,x.d);}}));
+  const m=Math.max(maxB,maxD),dl=d=>{const t=new Date(d+'T12:00:00');return `${t.getDate()}.${t.getMonth()+1}.`;};
+  const head=`<div class="cd-row cd-head"><span></span>${days.map(d=>`<span>${dl(d)}</span>`).join('')}</div>`;
+  const rows=people.map(p=>{let tb=0,td=0;
+    const cells=days.map(d=>{const x=per[p.id]?.[d]||{b:0,d:0};tb+=x.b;td+=x.d;
+      return `<span class="cd-cell" title="${esc(p.name)} ${dl(d)}: spálené ${round(x.b)} · vypité ${round(x.d)} kcal"><i class="cd-up" style="height:${Math.round(100*x.b/m)}%"></i><i class="cd-down" style="height:${Math.round(100*x.d/m)}%"></i></span>`;}).join('');
+    const net=tb-td;
+    return `<div class="cd-row"><span class="cd-name">${avatarHTML(p,'s')}<b>${esc(p.name)}</b><small class="${net>=0?'plus':'minus'}">${net>=0?'−':'+'}${round(Math.abs(net))}</small></span>${cells}</div>`;}).join('');
+  return `<div class="cd-legend"><span><i class="cd-up"></i>spálené jazdou</span><span><i class="cd-down"></i>vypité</span></div><div class="cd-grid" style="--days:${days.length}">${head}${rows}</div><p class="media-hint">Každý stĺpec je jeden deň: zelená hore = spálené, červená dole = vypité. Číslo pri mene = celková bilancia v kcal (− = spálil viac, + = vypil viac).</p>`;
 }
 const _origRenderCalories=renderCalories;
 renderCalories=function(st){
