@@ -554,6 +554,11 @@ function openSheet(id){$('sheetBackdrop').classList.add('show');$(id).classList.
 function closeSheets(){$('sheetBackdrop').classList.remove('show');$$('.bottom-sheet').forEach(x=>{x.classList.remove('show');x.setAttribute('aria-hidden','true');});document.body.classList.remove('sheet-open');S.rideEditing=false;}
 
 /* ===== PLATBY v3: BIC, Revolut, QR ===== */
+const _origAccount=renderAccountSettings;
+const _origSettlement=renderSettlement;
+const cleanBIC=v=>String(v||'').toUpperCase().replace(/\s+/g,'');
+const cleanRev=v=>String(v||'').trim().replace(/^@/,'').replace(/^https?:\/\/(www\.)?revolut\.me\//i,'').replace(/[\/?#].*$/,'').toLowerCase();
+const amt=c=>(Number(c||0)/100).toFixed(2);
 renderAccountSettings=function(){
   _origAccount();
   const box=document.querySelector('#accountSettings .iban-account'); if(!box)return;
