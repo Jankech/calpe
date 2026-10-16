@@ -125,5 +125,19 @@ input[type=date],input[type=time],input[type=datetime-local]{
 input[type=date]::-webkit-date-and-time-value,
 input[type=time]::-webkit-date-and-time-value,
 input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;margin:0}
-.pay-actions>button.paid{background:#e7f6ec;color:#23784a;border-color:#bfe3cb}
+.pay-actions>button.paid{background:#fff;color:var(--navy);border:1px dashed #9fb3bd}
 .pay-actions>button:disabled{opacity:.5}
+/* ===== FEATURES v6: filtre + účtenky ===== */
+#refreshBtn{display:none!important}
+.filter-bar{margin:0 0 10px}
+.filter-row{display:flex;gap:6px;align-items:center}
+.filter-row select{flex:1;min-width:0;margin:0;min-height:38px;padding:7px 8px;border-radius:11px;font-size:16px;background:#f7fafb}
+.filter-clear{flex:0 0 38px;height:38px;border:0;border-radius:11px;background:#fbe9e9;color:#b13e3e;display:grid;place-items:center}
+.filter-clear svg{width:16px;height:16px}
+.filter-info{margin-top:6px;font-size:11px;font-weight:800;color:#3a6974;background:#edf6f7;border-radius:10px;padding:6px 10px}
+.rcpt-new{margin:4px 0 8px}
+.rcpt-pick{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.rcpt-new .rcpt-pick{width:100%;justify-content:center}
+.rcpt-box{margin:6px 0 10px}
+.rcpt-view img{display:block;max-width:100%;max-height:340px;margin:0 auto;border-radius:12px;border:1px solid #e1e8ec}
+.rcpt-mark{font-size:12px}
