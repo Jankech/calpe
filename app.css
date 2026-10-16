@@ -95,3 +95,12 @@ main{max-width:1120px;margin:auto;padding:8px 16px 112px}.view{display:none}.vie
 .badge-detail-head{display:grid;grid-template-columns:68px minmax(0,1fr);gap:12px;align-items:center;margin-bottom:14px}.badge-detail-head .badge-medallion{width:68px;height:68px}.badge-detail-head h3{font-size:18px;margin:0}.badge-detail-head p:not(.eyebrow){font-size:10px;color:#758891;line-height:1.45;margin:5px 0 0}.badge-detail-earners{display:grid;gap:7px}.badge-detail-person{display:flex;align-items:center;gap:9px;padding:8px;border:1px solid #e2e9ec;border-radius:13px}.badge-detail-person b{display:block;font-size:11px}.badge-detail-person small{display:block;color:#788a93;font-size:8.5px;margin-top:2px}.person-badge-profile{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e4eaed}.person-badge-profile h3{margin:0;font-size:18px}.person-badge-profile p{margin:4px 0 0;color:#74868f;font-size:9px}.person-badge-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.person-badge-chip{display:flex;align-items:center;gap:8px;border:1px solid #e1e8eb;border-radius:13px;background:#fff;padding:8px;text-align:left;color:inherit}.person-badge-chip .mini-medallion{flex:0 0 auto}.person-badge-chip b{display:block;font-size:10px}.person-badge-chip small{display:block;color:#7b8c94;font-size:8px;margin-top:2px}.empty.compact{padding:12px}
 
 @media(max-width:410px){.score-admin-grid{grid-template-columns:1fr 1fr}.person-badge-grid{grid-template-columns:1fr}.bottom-nav button{font-size:9.5px}.bottom-nav .nav-icon-wrap{width:36px;height:36px}}
+/* ===== FIX v2: hidden, zoom, klávesnica ===== */
+[hidden]{display:none!important}
+html,body{touch-action:manipulation;overscroll-behavior-y:none}
+input,select,textarea{font-size:16px!important}
+.bottom-sheet{max-height:calc(var(--vvh,100dvh) - 12px);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+body.kb-open .bottom-nav{display:none!important}
+body.kb-open main{padding-bottom:24px}
+body.kb-open .bottom-sheet{bottom:var(--kb,0px);max-height:calc(var(--vvh,100dvh) - 8px);border-radius:18px 18px 0 0}
+body.kb-open .toast{bottom:calc(var(--kb,0px) + 14px)}
