@@ -554,20 +554,20 @@ function openSheet(id){$('sheetBackdrop').classList.add('show');$(id).classList.
 function closeSheets(){$('sheetBackdrop').classList.remove('show');$$('.bottom-sheet').forEach(x=>{x.classList.remove('show');x.setAttribute('aria-hidden','true');});document.body.classList.remove('sheet-open');S.rideEditing=false;}
 
 /* ===== PLATBY v3: BIC, Revolut, QR ===== */
-const _origAccount=renderAccountSettings, _origSettlement=renderSettlement;
-const cleanBIC=v=>String(v||'').toUpperCase().replace(/\s+/g,'');
-const cleanRev=v=>String(v||'').trim().replace(/^@/,'').replace(/^https?:\/\/(www\.)?revolut\.me\//i,'').replace(/[\/?#].*$/,'').toLowerCase();
-const amt=c=>(Number(c||0)/100).toFixed(2);
 renderAccountSettings=function(){
   _origAccount();
   const box=document.querySelector('#accountSettings .iban-account'); if(!box)return;
+  $('saveIbanBtn')?.remove();
   const d=document.createElement('div'); d.className='pay-extra';
-  d.innerHTML=`<div class="form-grid two"><label>BIC / SWIFT<input id="myBic" autocomplete="off" maxlength="11" placeholder="napr. TATRSKBX" value="${esc(S.me?.bic||'')}"></label><label>Revolut @meno<input id="myRevolut" autocomplete="off" maxlength="40" placeholder="napr. adamk" value="${esc(S.me?.revolut||'')}"></label></div><button class="secondary" id="savePayBtn" type="button" style="width:100%">${icon('save')} Uložiť BIC a Revolut</button><p class="media-hint">Revolut meno nájdeš v Revolute pod profilom (@meno). Stačí bez @.</p>`;
+  d.innerHTML=`<div class="form-grid two"><label>BIC / SWIFT<input id="myBic" autocomplete="off" maxlength="11" placeholder="napr. TATRSKBX" value="${esc(S.me?.bic||'')}"></label><label>Revolut @meno<input id="myRevolut" autocomplete="off" maxlength="40" placeholder="napr. adamk" value="${esc(S.me?.revolut||'')}"></label></div><button class="primary full" id="savePayBtn" type="button">${icon('save')} Uložiť platobné údaje</button><p class="media-hint">Revolut meno nájdeš v Revolute pod profilom (@meno). Stačí bez @.</p>`;
   box.appendChild(d);
-  $('savePayBtn').onclick=async()=>{try{const bic=cleanBIC($('myBic').value),rev=cleanRev($('myRevolut').value);
+  $('savePayBtn').onclick=async()=>{try{
+    const iban=normalizeIBAN($('myIban').value.trim()),bic=cleanBIC($('myBic').value),rev=cleanRev($('myRevolut').value);
+    if(iban&&!validIBAN(iban))throw new Error('IBAN nevyzerá platne. Skontroluj číslo účtu.');
     if(bic&&!/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(bic))throw new Error('BIC má 8 alebo 11 znakov, napr. TATRSKBX.');
     if(rev&&!/^[a-z0-9._-]{3,40}$/.test(rev))throw new Error('Revolut meno vyzerá zle.');
-    const{error}=await S.client.rpc('update_my_payment_details',{p_trip_id:S.tripId,p_bic:bic||null,p_revolut:rev||null});if(error)throw error;
+    let r=await S.client.rpc('update_my_iban',{p_trip_id:S.tripId,p_iban:iban||null});if(r.error)throw r.error;
+    r=await S.client.rpc('update_my_payment_details',{p_trip_id:S.tripId,p_bic:bic||null,p_revolut:rev||null});if(r.error)throw r.error;
     await loadAllData();toast('Platobné údaje uložené.');}catch(err){toast(err.message,true);}};
 };
 function epcPayload(to,cents,from){
