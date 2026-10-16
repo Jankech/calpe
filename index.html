@@ -56,6 +56,7 @@
     <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H4v16h6M14 8l4 4-4 4M8 12h10"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7a7 7 0 0 0-.7-1.6l.9-1.9-2.1-2.1-1.9.9a7 7 0 0 0-1.6-.7L10.5 2h-3l-.7 2.4a7 7 0 0 0-1.6.7l-1.9-.9-2.1 2.1.9 1.9a7 7 0 0 0-.7 1.6L-1 10.5v3l2.4.7c.2.6.4 1.1.7 1.6l-.9 1.9 2.1 2.1 1.9-.9c.5.3 1 .5 1.6.7l.7 2.4h3l.7-2.4c.6-.2 1.1-.4 1.6-.7l1.9.9 2.1-2.1-.9-1.9c.3-.5.5-1 .7-1.6l2.4-.7Z" transform="translate(2 0) scale(.85)"/></symbol>
     <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7h4l2-3h4l2 3h4a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="4"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
   </svg>
 
   <div id="gate" class="gate">
@@ -133,6 +134,7 @@
             <form id="paymentForm" class="form-body">
               <div class="form-grid two"><label>Dátum<input id="payDate" type="date" required></label><label>Mena<select id="payCurrency"></select></label></div>
               <div class="form-grid two"><label>Platí<select id="payFrom"></select></label><label>Komu<select id="payTo"></select></label></div>
+              <div id="payeeIbanHint" class="iban-hint" hidden></div>
               <label>Suma<input id="payAmount" type="number" min="0.01" step="0.01" required></label>
               <label>Poznámka<input id="payNote" placeholder="napr. vyrovnanie ubytovania"></label>
               <button class="primary full" type="submit"><svg class="icon"><use href="#i-save"></use></svg>Uložiť platbu</button>
@@ -208,7 +210,7 @@
               <div class="form-grid two"><label>Meno<select id="drinkPerson"></select></label><label>Príležitosť<select id="drinkOccasion"><option value="lunch">Obed</option><option value="dinner">Večera</option><option value="evening" selected>Večer</option><option value="other">Iné</option></select></label></div>
               <div class="form-grid three"><label>Pivo<input id="drinkBeer" type="number" min="0" step="1" value="0"></label><label>Víno<input id="drinkWine" type="number" min="0" step="1" value="0"></label><label>Panák<input id="drinkSpirits" type="number" min="0" step="1" value="0"></label></div>
               <label>Poznámka<input id="drinkNote" placeholder="voliteľné"></label>
-              <div class="info-strip"><svg class="icon"><use href="#i-check"></use></svg><span>Každý drink = 1 bod. Sober day = +2 body; celý trip bez alkoholu = +20 bodov.</span></div>
+              <div class="info-strip"><svg class="icon"><use href="#i-check"></use></svg><span id="drinkRuleHint">Každý drink = 1 bod. Sober day = +2 body; celý trip bez alkoholu = +20 bodov.</span></div>
               <button class="primary full" type="submit"><svg class="icon"><use href="#i-save"></use></svg>Uložiť</button>
             </form>
           </details>
@@ -218,13 +220,17 @@
 
         <div id="tab-badges" class="tab-pane">
           <section id="featuredBadge" class="featured-badge"></section>
-          <div id="badgeFamilies" class="badge-families"></div>
+          <section class="card badge-team-card"><div class="card-head"><div><p class="eyebrow dark">TÍMOVÉ ODZNAKY</p><h2>Kto čo odomkol</h2></div><svg class="big-line-icon"><use href="#i-medal"></use></svg></div><div id="latestBadges" class="latest-badges"></div></section>
+          <nav class="segmented badge-mode"><button class="active" id="badgeCatalogBtn" type="button">Odznaky</button><button id="badgePeopleBtn" type="button">Ľudia</button></nav>
+          <div id="badgeCatalog"><div id="badgeFamilies" class="badge-families"></div></div>
+          <div id="badgePeople" hidden></div>
         </div>
       </section>
 
       <section id="view-more" class="view">
         <div id="settingsSections" class="settings-accordions">
           <details class="card settings-panel" open><summary><span><svg class="icon"><use href="#i-calendar"></use></svg>Pobyt</span><svg class="chev"><use href="#i-down"></use></svg></summary><div class="form-body" id="staySettings"></div></details>
+          <details class="card settings-panel admin-only"><summary><span><svg class="icon"><use href="#i-gear"></use></svg>Administrácia</span><svg class="chev"><use href="#i-down"></use></svg></summary><div class="form-body" id="adminSettings"></div></details>
           <details class="card settings-panel admin-only"><summary><span><svg class="icon"><use href="#i-users"></use></svg>Účastníci</span><svg class="chev"><use href="#i-down"></use></svg></summary><div class="form-body" id="participantSettings"></div></details>
           <details class="card settings-panel admin-only"><summary><span><svg class="icon"><use href="#i-euro"></use></svg>Meny</span><svg class="chev"><use href="#i-down"></use></svg></summary><div class="form-body" id="currencySettings"></div></details>
           <details class="card settings-panel admin-only"><summary><span><svg class="icon"><use href="#i-gear"></use></svg>Výprava</span><svg class="chev"><use href="#i-down"></use></svg></summary><div class="form-body" id="tripSettings"></div></details>
@@ -235,8 +241,9 @@
 
     <nav class="bottom-nav" id="bottomNav">
       <button class="active" data-view="expenses"><span class="nav-icon-wrap"><svg><use href="#i-receipt"></use></svg></span><span>Výdavky</span></button>
-      <button data-view="bathroom"><span class="nav-icon-wrap"><svg><use href="#i-bath"></use></svg></span><span>Kúpeľňa</span></button>
-      <button data-view="cup"><span class="nav-icon-wrap"><svg><use href="#i-trophy"></use></svg></span><span>Calpe Cup</span></button>
+      <button id="navBathroom" data-view="bathroom" hidden><span class="nav-icon-wrap"><svg><use href="#i-bath"></use></svg></span><span>Kúpeľňa</span></button>
+      <button id="navBadges" data-view="cup" data-cup-tab="badges"><span class="nav-icon-wrap"><svg><use href="#i-medal"></use></svg></span><span>Odznaky</span></button>
+      <button data-view="cup" data-cup-tab="ranking"><span class="nav-icon-wrap"><svg><use href="#i-trophy"></use></svg></span><span>Calpe Cup</span></button>
       <button data-view="more"><span class="nav-icon-wrap"><svg><use href="#i-more"></use></svg></span><span>Viac</span></button>
     </nav>
   </div>
@@ -252,6 +259,13 @@
     <div class="sheet-handle"></div>
     <header class="sheet-head"><div class="sheet-icon ride"><svg><use href="#i-bike"></use></svg></div><div><p class="eyebrow dark">DETAIL JAZDY</p><h2 id="rideSheetTitle">Jazda</h2></div><button class="icon-button sheet-close" data-close-sheet="ride"><svg><use href="#i-close"></use></svg></button></header>
     <div id="rideSheetContent" class="sheet-content"></div>
+  </section>
+
+
+  <section id="badgeSheet" class="bottom-sheet" aria-hidden="true">
+    <div class="sheet-handle"></div>
+    <header class="sheet-head"><div id="badgeSheetIcon" class="sheet-icon"></div><div><p class="eyebrow dark">ODZNAKY</p><h2 id="badgeSheetTitle">Detail odznaku</h2></div><button class="icon-button sheet-close" data-close-sheet="badge"><svg><use href="#i-close"></use></svg></button></header>
+    <div id="badgeSheetContent" class="sheet-content"></div>
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

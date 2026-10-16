@@ -1,148 +1,174 @@
 # Calpe 2026 — GitHub Pages + Supabase
 
-This version is a static mobile-first web app for `calpe.jankech.cz`. GitHub Pages serves the HTML/CSS/JS/images; Supabase provides Google login and the shared Postgres database. Google Apps Script and Google Sheets are no longer required.
+Static mobile-first app for `calpe.jankech.cz`. GitHub Pages serves the HTML/CSS/JS/assets; Supabase provides Google login, Postgres, Row Level Security and private image Storage. Apps Script is no longer used at runtime.
 
-## Tomorrow: shortest deployment path
+## Recommended setup order
 
 ### 1. Create the Supabase project
 
-Create a new Supabase project. In **SQL Editor** run, in this order:
+In **Supabase → SQL Editor**, run these files in order:
 
 1. `supabase/01_schema.sql`
-2. Open `supabase/02_seed.sql`, replace `REPLACE_WITH_YOUR_GOOGLE_EMAIL`, check the trip dates, and then run it.
+2. Edit `supabase/02_seed.sql` and replace `REPLACE_WITH_YOUR_GOOGLE_EMAIL`, then run it.
+3. Run `supabase/03_import_legacy.sql` to import the attached legacy Google Sheet data.
+4. Optional: run `supabase/04_test_data.sql` to create demo rides/drinks/events. The same demo data can also be generated later from **Viac → Administrácia**.
 
-The seed creates your admin participant, the Calpe trip, currencies and expense categories. Once you can log in, add the other friends from **Viac → Účastníci**.
+The scripts are designed so `01_schema.sql` and `03_import_legacy.sql` can be re-run safely during setup.
 
-If you already ran an older version of `01_schema.sql`, simply run the updated file again. It is designed to be re-runnable and will add the private `calpe-media` bucket and its Storage policies.
+### 2. What the legacy import contains
 
-### 2. Configure Google login in Supabase
+`03_import_legacy.sql` was generated from `Cyklo_sustredenie_Calpe.xlsx` supplied with this build. It imports:
+
+- 5 participants: Adam, Marek, Tomáš, Jozef, Pavel
+- their existing stay dates
+- the legacy currencies and categories
+- **5 active expenses totalling €3,140**
+- the existing custom bike-rental split weights
+- no payments, because the legacy `DB_Platby` sheet has no active records
+
+The deleted €1,000 Hotel test/old row is deliberately excluded.
+
+`Pavel` keeps the real admin Google e-mail entered in `02_seed.sql`. Other imported participants receive temporary addresses such as `adam@pending.local`. After login, replace them with the correct Google e-mails in **Viac → Účastníci**. Those exact e-mails are the access allow-list.
+
+### 3. Configure Google login
 
 In Supabase **Authentication → Providers → Google**, enable Google.
 
-In Google Cloud / Google Auth Platform create an OAuth client of type **Web application**. Use:
+In Google Cloud / Google Auth Platform create an OAuth client of type **Web application**:
 
-- **Authorized JavaScript origin:** `https://calpe.jankech.cz`
-- **Authorized redirect URI:** use the exact Supabase callback URL shown on the Google provider page in your Supabase dashboard. It normally looks like `https://<project-ref>.supabase.co/auth/v1/callback`.
+- Authorized JavaScript origin: `https://calpe.jankech.cz`
+- Authorized redirect URI: use the exact Supabase callback URL shown on the Google provider page, normally `https://<project-ref>.supabase.co/auth/v1/callback`
 
-Copy the Google Client ID and Client Secret into the Supabase Google provider settings.
+Copy the Google Client ID and Client Secret into Supabase.
 
-Then in Supabase **Authentication → URL Configuration** set:
+In **Authentication → URL Configuration** set:
 
-- **Site URL:** `https://calpe.jankech.cz`
-- **Redirect URL:** `https://calpe.jankech.cz`
+- Site URL: `https://calpe.jankech.cz`
+- Redirect URL: `https://calpe.jankech.cz`
 
-For local testing you can additionally allow a localhost URL, but it is not required for the first production deployment.
+### 4. Configure `config.js`
 
-### 3. Put the public Supabase values in `config.js`
-
-From the Supabase project dashboard copy the project URL and the **publishable key** and edit:
+From the Supabase project dashboard copy the **Project URL** and **publishable key** and edit:
 
 ```js
 window.CALPE_CONFIG = {
   SUPABASE_URL: 'https://YOUR_PROJECT_REF.supabase.co',
-  SUPABASE_PUBLISHABLE_KEY: 'YOUR_PUBLISHABLE_KEY',
+  SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_...',
   TRIP_SLUG: 'calpe-2026',
   SITE_URL: 'https://calpe.jankech.cz'
 };
 ```
 
-The publishable browser key is intended to be public. **Never put a `service_role` / secret key in GitHub.** Access is enforced by the Row Level Security policies in `01_schema.sql`.
+The Project URL and publishable key are intentionally public browser values. Never put a `service_role`, `sb_secret_...`, database password or Google OAuth client secret in GitHub.
 
-### 4. Replace the current GitHub Pages contents
+### 5. Publish to GitHub Pages
 
-Copy the contents of this folder into the root of `Jankech/calpe`, replacing the old forwarding `index.html`. Keep `CNAME` with:
+Copy this folder into the root of `Jankech/calpe`, replacing the old forwarding page. Keep the included `CNAME`:
 
 ```text
 calpe.jankech.cz
 ```
 
-After GitHub Pages publishes the commit, `https://calpe.jankech.cz` becomes the application itself rather than forwarding to Apps Script.
+After GitHub Pages publishes the commit, `https://calpe.jankech.cz` is the application itself.
 
-### 5. First login
+## Admin controls
 
-Open `https://calpe.jankech.cz` and choose **Pokračovať cez Google**. The e-mail must exactly match the admin e-mail in `02_seed.sql`.
+Users with `participants.role = 'admin'` see **Viac → Administrácia**.
 
-After login:
+The admin can:
 
-1. Go to **Viac → Výprava** and confirm the trip dates.
-2. Go to **Viac → Účastníci** and add each friend's Google e-mail.
-3. Go to **Viac → Pobyt** and set arrival/departure dates.
-4. Check currency rates before using non-EUR expenses.
+- change all Calpe Cup scoring values; changes recalculate the complete leaderboard immediately
+- show/hide **Kúpeľňa** for everybody
+- show/hide TEST records in every ride/drink list, leaderboard, Everest calculation and badge calculation
+- generate a fresh demo dataset
+- delete all demo data
 
-Friends can then sign in with their listed Google accounts. Unlisted accounts receive the polished “no access” screen and cannot read the trip data because of RLS.
+Default scoring is:
 
-## Participant photos and trip cover
+- 10 km = 1 point
+- 100 m climbing = 1 point
+- drink = 1 point
+- sprint podium = 6 / 4 / 2
+- hill podium = 6 / 4 / 2
+- crash = 10
+- puncture = 5
+- mechanical = 5
+- completed sober day = 2
+- full trip sober = 20
 
-`01_schema.sql` now creates a private Supabase Storage bucket named **`calpe-media`**. No manual bucket setup is required when you run the schema in the SQL Editor.
+The scoring configuration is stored in `trips.score_settings`, not hard-coded as the only possible configuration.
 
-After signing in, every participant can go to **Viac → Účet** and choose **Pridať/Zmeniť fotku**. The browser crops the selected image to a square, resizes it to 512×512 WebP and uploads it directly to the participant's protected Storage path. A participant can only change their own avatar; trip admins can manage all media paths at the Storage-policy level.
+## Bathroom / bottom navigation
 
-The trip admin can also go to **Viac → Výprava** and upload a trip cover. It is cropped to 1600×900 and appears as the **Viac** hero image. Removing it restores the generated default background.
+Bathroom is **hidden by default**. When hidden, the four primary mobile buttons are:
 
-The bucket is **private**. The app creates short-lived signed URLs after authentication, and Storage RLS only permits trip members to read the trip's images. The public GitHub repository never contains user-uploaded photos.
+**Výdavky · Odznaky · Calpe Cup · Viac**
 
-`assets/users/` remains only as an optional local fallback for existing photos; if neither a Supabase photo nor a local fallback exists, the app shows initials.
+If an admin enables Bathroom, its button replaces the Odznaky shortcut. Odznaky are still accessible as a Calpe Cup tab.
 
-## Background photos
+## TEST data
 
-The four current generated images are local files:
+`generate_test_data()` creates **6 demo rides** plus **10 demo drink records**, with sprints, hill-climb podiums, a puncture, a mechanical and a crash. All demo rides/drinks are marked `is_test=true`.
 
-- `assets/hero-expenses.webp`
-- `assets/hero-bathroom.webp`
-- `assets/hero-cup.webp`
-- `assets/hero-more.webp`
+When **Show test data** is off, they are excluded from:
 
-You can replace any of them later with your own photo while keeping the filename. No code or Supabase change is required.
+- journals
+- totals and score
+- Everest
+- mishaps
+- drink statistics
+- achievements/badges
 
-## What is implemented
+Real expenses and participants are never touched by the test-data generator.
 
-- Google authentication through Supabase Auth and an e-mail allow-list based on trip participants.
-- Expenses: compact feed, category icons, tap-to-open bottom sheet, full edit/delete, equal/night/custom splitting, settlement and payments.
-- Bathroom: collapsed day accordions, two bathrooms, 15-minute morning slots and conflict protection.
-- Calpe Cup: compact non-scrolling ranking, expandable point detail, avatars and category composition.
-- Rides: compact feed, bottom-sheet detail/edit, multiple named sprints and hill climbs with 1st/2nd/3rd places, plus crashes, punctures and mechanical incidents.
-- Mishap points: crash +10, puncture +5, mechanical +5.
-- Podium points: sprint 6/4/2; hill climb 6/4/2.
-- Everest: group total, number of complete Everests, progress to the next Everest and individual contributions.
-- Drinks: date + time + occasion; multiple entries per day; 1 point per drink, plus sober-day and full-trip sober scoring. Variety/social patterns remain badges rather than extra points.
-- Badges: riding, mishaps, recovery/drinks, money; first mishap badges are unique Platinum. Repeat mishap badges progress Gold I (1), Gold II (2), Gold III (3+) while retaining the exact × count.
-- Settings: collapsed sections; stay dates are side-by-side; participant management is admin-only.
-- Profile photos: each participant can upload/change/remove their own picture in Viac → Účet. Photos are resized client-side and stored in private Supabase Storage.
-- Trip cover: admins can upload/change/remove a private trip cover in Viac → Výprava.
-- Static UI assets stay in GitHub; user-generated images live in Supabase Storage.
+## Achievements / team view
 
-## Scoring currently encoded in `app.js`
+Odznaky now work as a team collection rather than only a personal list:
 
-- 10 km = 1 point (completed 10 km blocks)
-- 100 m climbing = 1 point (completed 100 m blocks)
-- Sprint podium = 6 / 4 / 2
-- Hill-climb podium = 6 / 4 / 2
-- Crash = +10
-- Puncture = +5
-- Mechanical = +5
-- Every recorded drink = +1
-- Completed sober day = +2
-- Entire trip sober = +20 after the trip has ended
+- latest unlocks appear at the top with avatar + date
+- **Odznaky** view shows the catalogue and everyone who has each badge
+- tap a badge for its full description and all earners
+- **Ľudia** view shows every participant and their badge collection
+- tap a person for their complete achievement profile
 
-Longest ride, Mountain Goat, Everest, Accountant, drink variety and similar achievements are badges only and do **not** add extra leaderboard points.
+First crash / puncture / mechanical remain unique Platinum badges. Repeat mishaps progress through Gold I, Gold II and Gold III while preserving the exact count.
 
-## Security model
+## Participant photos, trip cover and IBAN
 
-Every shared data table has Row Level Security enabled. A signed-in account is a trip member only when its Google e-mail matches an active `participants` row. Admin-only configuration tables and participant management use an admin role. The special database functions also re-check trip membership before writing.
+The private Supabase Storage bucket `calpe-media` is created automatically by `01_schema.sql`.
 
-The browser never receives a database password, Google client secret or Supabase service-role key. The `calpe-media` bucket is private: Storage policies allow members to read media for their trip, participants to manage only their own avatar, and admins to manage the trip cover/all avatars.
+Each participant can use **Viac → Účet** to:
 
-## Files
+- upload/change/remove their profile photo
+- set/change/remove their IBAN
+
+The browser crops avatars to 512×512 WebP before upload. The trip admin can upload the trip cover from **Viac → Výprava**. Storage is private and the app uses short-lived signed URLs.
+
+IBANs are visible only to authenticated members of the trip and appear next to settlement transfers with a copy button.
+
+## New logo
+
+The app icon was replaced by a bolder symbol-only mark combining:
+
+- Spanish/Mediterranean sun
+- mountain silhouette
+- sweeping coastal road
+- road bike
+
+`assets/icon.svg`, `icon-192.png` and `icon-512.png` are ready for the browser/PWA/home-screen icon.
+
+## Main files
 
 ```text
-index.html                 main page
-app.css                    visual system
-app.js                     application logic
-config.js                  your public Supabase project configuration
-CNAME                      calpe.jankech.cz
-manifest.webmanifest       home-screen metadata
-assets/                    static backgrounds, icons and optional avatar fallbacks
-supabase/01_schema.sql     database + RLS + database functions
-supabase/02_seed.sql       initial trip/admin/reference data
+index.html
+app.css
+app.js
+config.js
+CNAME
+manifest.webmanifest
+assets/
+supabase/01_schema.sql
+supabase/02_seed.sql
+supabase/03_import_legacy.sql
+supabase/04_test_data.sql
 ```
-

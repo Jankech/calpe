@@ -1,7 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="30" fill="#ffffff"/>
-  <circle cx="91" cy="32" r="13" fill="#ff6d2d"/>
-  <path d="M13 86 44 39l16 24 10-15 34 38H13Z" fill="#0f8fa3"/>
-  <path d="M13 87c24-5 43-3 56 5 13 8 25 12 46 9" fill="none" stroke="#082f49" stroke-width="10" stroke-linecap="round"/>
-  <path d="M48 43 59 64l8-12 10 12" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".94"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Calpe cycling">
+  <defs>
+    <linearGradient id="sun" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffbe3b"/>
+      <stop offset="1" stop-color="#ff5b25"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f91a7"/>
+      <stop offset="1" stop-color="#0a5670"/>
+    </linearGradient>
+  </defs>
+  <rect x="18" y="18" width="476" height="476" rx="112" fill="#fff7ea"/>
+  <circle cx="352" cy="151" r="92" fill="url(#sun)"/>
+  <path d="M74 321 171 151l52 75 41-93 123 188Z" fill="#082f49"/>
+  <path d="m183 171 38 55 42-94 31 47-25-18-22 31-18-23-30 39Z" fill="#fff" opacity=".94"/>
+  <path d="M73 328h366v116H73Z" fill="url(#sea)"/>
+  <path d="M66 428c86-112 165-115 232-88 48 19 80 7 145-44" fill="none" stroke="#fff" stroke-width="35" stroke-linecap="round"/>
+  <path d="M66 428c86-112 165-115 232-88 48 19 80 7 145-44" fill="none" stroke="#082f49" stroke-width="7" stroke-linecap="round" opacity=".22"/>
+  <g transform="translate(140 323)" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <circle cx="0" cy="72" r="38"/>
+    <circle cx="110" cy="72" r="38"/>
+    <path d="m0 72 42-62h37l31 62M34 25h55M54 8h31M44 10 27-12M42 10l-20 33M78 10l21-20M45 10l27 29"/>
+    <circle cx="61" cy="-15" r="13" fill="#fff" stroke="none"/>
+  </g>
+  <path d="M70 306h372" stroke="#ff6d2d" stroke-width="11" opacity=".9"/>
 </svg>
