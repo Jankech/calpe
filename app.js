@@ -558,7 +558,7 @@ init();
 
 
 /* ---------- FIX v2: klávesnica + zákaz zoomu ---------- */
-(function(){
+try{(function(){
   const root=document.documentElement,vv=window.visualViewport;
   function upd(){const h=vv?vv.height:innerHeight,kb=vv?Math.max(0,innerHeight-vv.height-vv.offsetTop):0;
     root.style.setProperty('--vvh',h+'px');root.style.setProperty('--kb',kb+'px');
@@ -567,7 +567,6 @@ init();
   if(vv){vv.addEventListener('resize',upd);vv.addEventListener('scroll',upd);}
   document.addEventListener('focusin',e=>{upd();if(e.target.matches&&e.target.matches('input,textarea,select'))setTimeout(()=>{upd();e.target.scrollIntoView({block:'center',behavior:'smooth'});},300);});
   document.addEventListener('focusout',()=>setTimeout(upd,150));
-  ['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
-  let last=0;document.addEventListener('touchend',e=>{const n=Date.now();if(n-last<300&&!(e.target.closest&&e.target.closest('input,textarea,select')))e.preventDefault();last=n;},{passive:false});
+  ['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
   upd();
-})();
+})();}catch(e){console.warn('kb fix',e);}
