@@ -542,7 +542,7 @@ async function saveAdminSettings(){
   try{const cfg={...DEFAULT_SCORE};$$('[data-score-key]',$('adminSettings')).forEach(i=>cfg[i.dataset.scoreKey]=Number(i.value));
     if(!(cfg.distance_km_per_point>0)||!(cfg.elevation_m_per_point>0))throw new Error('Km a metre na bod musia byť väčšie ako nula.');
     const payload={show_bathroom:$('adminBathroomToggle').checked,show_test_data:$('adminTestToggle').checked,score_settings:cfg};
-    const{error}=await S.client.from('trips').update(payload).eq('id',S.tripId);if(error)throw error;await loadAllData();toast('Administrácia uložená.');
+    const{data:upd,error}=await S.client.from('trips').update(payload).eq('id',S.tripId).select('id,show_bathroom');if(error)throw error;if(!upd||!upd.length)throw new Error('Uloženie zablokované (RLS) – nastavenie sa nezmenilo.');await loadAllData();toast('Administrácia uložená.');
   }catch(err){toast(err.message,true);}
 }
 async function generateTestData(){if(!confirm('Vygenerovať ukážkové TEST jazdy a drinky? Existujúce TEST dáta sa nahradia.'))return;try{const{error}=await S.client.rpc('generate_test_data',{p_trip_id:S.tripId});if(error)throw error;await loadAllData();toast('Test dáta vygenerované.');}catch(err){toast(err.message,true);}}
@@ -554,4 +554,20 @@ function openSheet(id){$('sheetBackdrop').classList.add('show');$(id).classList.
 function closeSheets(){$('sheetBackdrop').classList.remove('show');$$('.bottom-sheet').forEach(x=>{x.classList.remove('show');x.setAttribute('aria-hidden','true');});document.body.classList.remove('sheet-open');S.rideEditing=false;}
 
 init();
+})();
+
+
+/* ---------- FIX v2: klávesnica + zákaz zoomu ---------- */
+(function(){
+  const root=document.documentElement,vv=window.visualViewport;
+  function upd(){const h=vv?vv.height:innerHeight,kb=vv?Math.max(0,innerHeight-vv.height-vv.offsetTop):0;
+    root.style.setProperty('--vvh',h+'px');root.style.setProperty('--kb',kb+'px');
+    const f=document.activeElement,typing=f&&f.matches&&f.matches('input:not([type=checkbox]):not([type=radio]):not([type=file]),textarea,select');
+    document.body.classList.toggle('kb-open',!!typing&&(kb>80||!vv));}
+  if(vv){vv.addEventListener('resize',upd);vv.addEventListener('scroll',upd);}
+  document.addEventListener('focusin',e=>{upd();if(e.target.matches&&e.target.matches('input,textarea,select'))setTimeout(()=>{upd();e.target.scrollIntoView({block:'center',behavior:'smooth'});},300);});
+  document.addEventListener('focusout',()=>setTimeout(upd,150));
+  ['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+  let last=0;document.addEventListener('touchend',e=>{const n=Date.now();if(n-last<300&&!(e.target.closest&&e.target.closest('input,textarea,select')))e.preventDefault();last=n;},{passive:false});
+  upd();
 })();
