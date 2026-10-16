@@ -553,6 +553,64 @@ async function clearTestData(){if(!confirm('Zmazať všetky TEST jazdy a drinky?
 function openSheet(id){$('sheetBackdrop').classList.add('show');$(id).classList.add('show');$(id).setAttribute('aria-hidden','false');document.body.classList.add('sheet-open');}
 function closeSheets(){$('sheetBackdrop').classList.remove('show');$$('.bottom-sheet').forEach(x=>{x.classList.remove('show');x.setAttribute('aria-hidden','true');});document.body.classList.remove('sheet-open');S.rideEditing=false;}
 
+/* ===== PLATBY v3 ===== */
+.pay-extra{margin-top:12px}
+.pay-actions{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;padding-left:44px;margin-top:4px}
+.pay-actions>button{border:1px solid #d6e1e5;background:#f4f8f9;color:#31586a;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:850;display:inline-flex;align-items:center;gap:4px}
+.pay-actions>button svg{width:13px;height:13px}
+.pay-actions>button.rev{background:#0b0b0b;color:#fff;border-color:#0b0b0b}
+.pay-detail{flex-basis:100%;margin-top:6px}
+.pay-qr{width:220px;max-width:100%;background:#fff;border-radius:14px;padding:6px;border:1px solid #e1e8ec}
+.pay-qr svg{width:100%;height:auto;display:block}
+4. app.js: paste above the line init();
+Near the end of the file there is a line containing only init();. Put this block above it, not after the final })();, because it needs access to the app's internal functions.
+
+/* ===== PLATBY v3: BIC, Revolut, QR ===== */
+const _origAccount=renderAccountSettings, _origSettlement=renderSettlement;
+const cleanBIC=v=>String(v||'').toUpperCase().replace(/\s+/g,'');
+const cleanRev=v=>String(v||'').trim().replace(/^@/,'').replace(/^https?:\/\/(www\.)?revolut\.me\//i,'').replace(/[\/?#].*$/,'').toLowerCase();
+const amt=c=>(Number(c||0)/100).toFixed(2);
+renderAccountSettings=function(){
+  _origAccount();
+  const box=document.querySelector('#accountSettings .iban-account'); if(!box)return;
+  const d=document.createElement('div'); d.className='pay-extra';
+  d.innerHTML=`<div class="form-grid two"><label>BIC / SWIFT<input id="myBic" autocomplete="off" maxlength="11" placeholder="napr. TATRSKBX" value="${esc(S.me?.bic||'')}"></label><label>Revolut @meno<input id="myRevolut" autocomplete="off" maxlength="40" placeholder="napr. adamk" value="${esc(S.me?.revolut||'')}"></label></div><button class="secondary" id="savePayBtn" type="button" style="width:100%">${icon('save')} Uložiť BIC a Revolut</button><p class="media-hint">Revolut meno nájdeš v Revolute pod profilom (@meno). Stačí bez @.</p>`;
+  box.appendChild(d);
+  $('savePayBtn').onclick=async()=>{try{const bic=cleanBIC($('myBic').value),rev=cleanRev($('myRevolut').value);
+    if(bic&&!/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(bic))throw new Error('BIC má 8 alebo 11 znakov, napr. TATRSKBX.');
+    if(rev&&!/^[a-z0-9._-]{3,40}$/.test(rev))throw new Error('Revolut meno vyzerá zle.');
+    const{error}=await S.client.rpc('update_my_payment_details',{p_trip_id:S.tripId,p_bic:bic||null,p_revolut:rev||null});if(error)throw error;
+    await loadAllData();toast('Platobné údaje uložené.');}catch(err){toast(err.message,true);}};
+};
+function epcPayload(to,cents,from){
+  return ['BCD','002','1','SCT',cleanBIC(to.bic),String(to.name||'').slice(0,70),normalizeIBAN(to.iban),'EUR'+amt(cents),'','',('Calpe 2026 - '+(from?.name||'')).slice(0,140)].join('\n');
+}
+function qrSvg(text){
+  if(typeof qrcode!=='function')return '';
+  if(qrcode.stringToBytesFuncs&&qrcode.stringToBytesFuncs['UTF-8'])qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];
+  const q=qrcode(0,'M');q.addData(text);q.make();return q.createSvgTag({cellSize:5,margin:3,scalable:true});
+}
+renderSettlement=function(){
+  _origSettlement();
+  const rows=$$('#settlementTransfers .transfer'),tr=transfers(balances());
+  rows.forEach((row,i)=>{const x=tr[i];if(!x)return;const to=participant(x.to),from=participant(x.from);
+    row.querySelector('.iban-transfer')?.remove();
+    const iban=normalizeIBAN(to?.iban),rev=cleanRev(to?.revolut);
+    if(!iban&&!rev)return;
+    const a=document.createElement('div');a.className='pay-actions';
+    a.innerHTML=`${iban?`<button type="button" data-a="iban">${icon('copy')} IBAN</button>`:''}<button type="button" data-a="amt">${icon('copy')} ${amt(x.amount)} €</button>${rev?`<button type="button" data-a="rev" class="rev">Revolut</button>`:''}${iban?`<button type="button" data-a="qr">QR</button>`:''}<div class="pay-detail" hidden></div>`;
+    row.appendChild(a);
+    const det=a.querySelector('.pay-detail');
+    a.onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.dataset.a;
+      if(k==='iban')copyText(iban,'IBAN skopírovaný');
+      if(k==='amt')copyText(amt(x.amount),'Suma skopírovaná');
+      if(k==='rev'){copyText(amt(x.amount),'Suma skopírovaná – vlož ju v Revolute');window.open('https://revolut.me/'+encodeURIComponent(rev),'_blank','noopener');}
+      if(k==='qr'){if(!det.hidden){det.hidden=true;return;}const svg=qrSvg(epcPayload(to,x.amount,from));
+        det.innerHTML=svg?`<div class="pay-qr">${svg}</div><p class="media-hint"><b>${esc(to.name)}</b> · ${esc(formatIBAN(iban))}${to.bic?' · '+esc(cleanBIC(to.bic)):''} · <b>${amt(x.amount)} €</b><br>Naskenuj v bankovej appke (SEPA QR). Pred potvrdením skontroluj meno, IBAN a sumu.</p>`:`<p class="media-hint">QR knižnica sa nenačítala.</p>`;det.hidden=false;}
+    };
+  });
+};  
+  
 init();
 })();
 /* ---------- FIX v2: klávesnica + zákaz zoomu ---------- */
