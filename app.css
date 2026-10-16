@@ -95,46 +95,56 @@ main{max-width:1120px;margin:auto;padding:8px 16px 112px}.view{display:none}.vie
 .badge-detail-head{display:grid;grid-template-columns:68px minmax(0,1fr);gap:12px;align-items:center;margin-bottom:14px}.badge-detail-head .badge-medallion{width:68px;height:68px}.badge-detail-head h3{font-size:18px;margin:0}.badge-detail-head p:not(.eyebrow){font-size:10px;color:#758891;line-height:1.45;margin:5px 0 0}.badge-detail-earners{display:grid;gap:7px}.badge-detail-person{display:flex;align-items:center;gap:9px;padding:8px;border:1px solid #e2e9ec;border-radius:13px}.badge-detail-person b{display:block;font-size:11px}.badge-detail-person small{display:block;color:#788a93;font-size:8.5px;margin-top:2px}.person-badge-profile{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e4eaed}.person-badge-profile h3{margin:0;font-size:18px}.person-badge-profile p{margin:4px 0 0;color:#74868f;font-size:9px}.person-badge-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.person-badge-chip{display:flex;align-items:center;gap:8px;border:1px solid #e1e8eb;border-radius:13px;background:#fff;padding:8px;text-align:left;color:inherit}.person-badge-chip .mini-medallion{flex:0 0 auto}.person-badge-chip b{display:block;font-size:10px}.person-badge-chip small{display:block;color:#7b8c94;font-size:8px;margin-top:2px}.empty.compact{padding:12px}
 
 @media(max-width:410px){.score-admin-grid{grid-template-columns:1fr 1fr}.person-badge-grid{grid-template-columns:1fr}.bottom-nav button{font-size:9.5px}.bottom-nav .nav-icon-wrap{width:36px;height:36px}}
-/* ===== FIX v2: hidden, zoom, klávesnica ===== */
+
+/* základ: skryté prvky, zoom, šírka */
 [hidden]{display:none!important}
-html,body{touch-action:manipulation;overscroll-behavior-y:none}
-input,select,textarea{font-size:16px!important}
+html,body{touch-action:manipulation;overscroll-behavior-y:none;overflow-x:hidden}
+@supports (overflow:clip){html,body,main,.view{overflow-x:clip}}
+main,.view{max-width:100%}
+#refreshBtn{display:none!important}
+input,select,textarea{font-size:16px!important;max-width:100%}
+
+/* klávesnica a spodné okná */
 .bottom-sheet{max-height:calc(var(--vvh,100dvh) - 12px);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 body.kb-open .bottom-nav{display:none!important}
 body.kb-open main{padding-bottom:24px}
 body.kb-open .bottom-sheet{bottom:var(--kb,0px);max-height:calc(var(--vvh,100dvh) - 8px);border-radius:18px 18px 0 0}
 body.kb-open .toast{bottom:calc(var(--kb,0px) + 14px)}
 
-/* ===== PLATBY v3 ===== */
+/* dátumy na iPhone + mriežky, ktoré sa nesmú rozťahovať */
+input[type=date],input[type=time],input[type=datetime-local]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;-webkit-min-logical-width:calc(100% - 16px);text-align:left;background:#fff}
+input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and-time-value,input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;margin:0}
+.form-grid>*,.stay-dates>*,.iban-row>*,.inline-form>*,.score-admin-grid>*,.score-podium-grid>*,.score-podium-grid label>*,.admin-actions>*,.settings-row *{min-width:0}
+.form-grid label,.stay-dates label,.iban-row label{overflow:hidden;padding:0 3px 3px}
+.stay-dates,.score-admin-grid,.score-podium-grid,.admin-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.score-podium-grid label{grid-template-columns:30px minmax(0,1fr)}
+.stay-card,.stay-list,.settings-panel,.admin-block{min-width:0;max-width:100%}
+.admin-actions button{white-space:normal;line-height:1.2;padding:6px 8px}
+#view-more small,#view-more code{overflow-wrap:anywhere}
+.toggle-row{position:relative}
+.toggle-row input{width:1px!important;height:1px!important;min-height:0!important;padding:0!important;margin:0!important;left:0;top:0;border:0}
+
+/* platby: BIC/Revolut, tlačidlá vo vyrovnaní, QR */
 .pay-extra{margin-top:12px}
 .pay-actions{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;padding-left:44px;margin-top:4px}
 .pay-actions>button{border:1px solid #d6e1e5;background:#f4f8f9;color:#31586a;border-radius:10px;padding:7px 10px;font-size:11px;font-weight:850;display:inline-flex;align-items:center;gap:4px}
 .pay-actions>button svg{width:13px;height:13px}
 .pay-actions>button.rev{background:#0b0b0b;color:#fff;border-color:#0b0b0b}
+.pay-actions>button.paid{background:#fff;color:var(--navy);border:1px dashed #9fb3bd}
+.pay-actions>button:disabled{opacity:.5}
 .pay-detail{flex-basis:100%;margin-top:6px}
 .pay-qr{width:220px;max-width:100%;background:#fff;border-radius:14px;padding:6px;border:1px solid #e1e8ec}
 .pay-qr svg{width:100%;height:auto;display:block}
 
-/* ===== FIX v5: dátumy na iPhone ===== */
-.form-grid>*,.form-grid label{min-width:0;overflow:hidden;padding:0 3px 3px}
-input[type=date],input[type=time],input[type=datetime-local]{
-  -webkit-appearance:none;appearance:none;display:block;
-  width:100%;max-width:100%;min-width:0;
-  -webkit-min-logical-width:calc(100% - 16px);
-  text-align:left;background:#fff}
-input[type=date]::-webkit-date-and-time-value,
-input[type=time]::-webkit-date-and-time-value,
-input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;margin:0}
-.pay-actions>button.paid{background:#fff;color:var(--navy);border:1px dashed #9fb3bd}
-.pay-actions>button:disabled{opacity:.5}
-/* ===== FEATURES v6: filtre + účtenky ===== */
-#refreshBtn{display:none!important}
+/* filtre */
 .filter-bar{margin:0 0 10px}
 .filter-row{display:flex;gap:6px;align-items:center}
-.filter-row select{flex:1;min-width:0;margin:0;min-height:38px;padding:7px 8px;border-radius:11px;font-size:16px;background:#f7fafb}
+.filter-row select{flex:1;min-width:0;margin:0;min-height:38px;padding:7px 8px;border-radius:11px;background:#f7fafb}
 .filter-clear{flex:0 0 38px;height:38px;border:0;border-radius:11px;background:#fbe9e9;color:#b13e3e;display:grid;place-items:center}
 .filter-clear svg{width:16px;height:16px}
 .filter-info{margin-top:6px;font-size:11px;font-weight:800;color:#3a6974;background:#edf6f7;border-radius:10px;padding:6px 10px}
+
+/* účtenky */
 .rcpt-new{margin:4px 0 8px}
 .rcpt-pick{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .rcpt-new .rcpt-pick{width:100%;justify-content:center}
@@ -142,20 +152,10 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;margin:0
 .rcpt-view img{display:block;max-width:100%;max-height:340px;margin:0 auto;border-radius:12px;border:1px solid #e1e8ec}
 .rcpt-mark{font-size:12px}
 
-/* ===== KCAL v7 ===== */
+/* kalórie: prepínač + denný prehľad */
 .cal-toggle{display:flex;gap:4px;background:#eef3f5;border-radius:11px;padding:3px;margin-bottom:10px}
 .cal-toggle button{flex:1;border:0;background:transparent;border-radius:9px;padding:7px;font-size:11px;font-weight:850;color:#5d7480}
 .cal-toggle button.active{background:#fff;color:var(--navy);box-shadow:0 2px 6px rgba(8,47,73,.1)}
-.cal-svg{width:100%;height:auto;display:block}
-.cal-svg text{font-size:9px;fill:#7b8b93;stroke:none;font-weight:700}
-.cal-svg circle{stroke:#fff;stroke-width:1.2}
-.cal-svg .grid{stroke:#e3eaee;stroke-width:1}
-.cal-svg .zero{stroke:#9fb0b8;stroke-width:1.2;stroke-dasharray:4 3}
-.cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
-.cal-legend span{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;color:#3e5866}
-.cal-legend i{width:14px;height:4px;border-radius:2px;display:inline-block}
-
-/* ===== KCAL v8: denný prehľad po ľuďoch ===== */
 .cd-legend{display:flex;gap:12px;margin-bottom:8px;font-size:10px;font-weight:800;color:#5d7480}
 .cd-legend span{display:inline-flex;align-items:center;gap:5px}
 .cd-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
@@ -169,31 +169,9 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;margin:0
 .cd-name small{font-size:9px;font-weight:850}
 .cd-name small.plus{color:#348657}.cd-name small.minus{color:#c0453f}
 .cd-cell{position:relative;height:56px;border-radius:5px}
-.cd-cell i{position:absolute;left:18%;right:18%;min-height:0}
-.cd-up,.cd-legend .cd-up{background:var(--green,#3a9d63)}
-.cd-down,.cd-legend .cd-down{background:var(--red,#d6455d)}
+.cd-cell i{position:absolute;left:18%;right:18%}
+.cd-up{background:var(--green,#3a9d63)}
+.cd-down{background:var(--red,#d6455d)}
 .cd-cell .cd-up{bottom:50%;max-height:50%;border-radius:3px 3px 0 0}
 .cd-cell .cd-down{top:50%;max-height:50%;border-radius:0 0 3px 3px}
 .cd-cell:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#d5dfe4}
-
-/* ===== FIX v9: Viac bez bočného posunu ===== */
-html,body{overflow-x:hidden}
-@supports (overflow:clip){html,body{overflow-x:clip}}
-main,.view{max-width:100%;overflow-x:hidden}
-@supports (overflow:clip){main,.view{overflow-x:clip}}
-#view-more input,#view-more select,#view-more textarea,#view-more table{max-width:100%}
-#view-more .stay-dates>*,#view-more .stay-dates label,
-#view-more .inline-form>*,#view-more .settings-row *,
-#view-more .form-grid>*,#view-more .iban-row>*{min-width:0}
-#view-more .stay-dates label,#view-more .iban-row label{overflow:hidden;padding:0 3px 3px}
-#view-more small,#view-more code{overflow-wrap:anywhere}
-
-/* ===== FIX v10: administrácia bez bočného posunu ===== */
-.toggle-row{position:relative}
-.toggle-row input{width:1px!important;height:1px!important;min-height:0!important;padding:0!important;margin:0!important;left:0;top:0;border:0}
-#view-more .stay-card,#view-more .stay-list,#view-more .settings-panel,#view-more .admin-block{min-width:0;max-width:100%}
-#view-more .stay-dates{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-#view-more .score-admin-grid,#view-more .score-podium-grid,#view-more .admin-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-#view-more .score-podium-grid label{grid-template-columns:30px minmax(0,1fr)}
-#view-more .score-admin-grid>*,#view-more .score-podium-grid>*,#view-more .score-podium-grid label>*,#view-more .admin-actions>*{min-width:0}
-#view-more .admin-actions button{white-space:normal;line-height:1.2;padding:6px 8px}
