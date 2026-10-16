@@ -542,7 +542,7 @@ async function saveAdminSettings(){
   try{const cfg={...DEFAULT_SCORE};$$('[data-score-key]',$('adminSettings')).forEach(i=>cfg[i.dataset.scoreKey]=Number(i.value));
     if(!(cfg.distance_km_per_point>0)||!(cfg.elevation_m_per_point>0))throw new Error('Km a metre na bod musia byť väčšie ako nula.');
     const payload={show_bathroom:$('adminBathroomToggle').checked,show_test_data:$('adminTestToggle').checked,score_settings:cfg};
-    const{error}=await S.client.from('trips').update(payload).eq('id',S.tripId);if(error)throw error;await loadAllData();toast('Administrácia uložená.');
+    const{data:upd,error}=await S.client.from('trips').update(payload).eq('id',S.tripId).select('id,show_bathroom');if(error)throw error;if(!upd||!upd.length)throw new Error('Uloženie zablokované (RLS) – nastavenie sa nezmenilo.');await loadAllData();toast('Administrácia uložená.');
   }catch(err){toast(err.message,true);}
 }
 async function generateTestData(){if(!confirm('Vygenerovať ukážkové TEST jazdy a drinky? Existujúce TEST dáta sa nahradia.'))return;try{const{error}=await S.client.rpc('generate_test_data',{p_trip_id:S.tripId});if(error)throw error;await loadAllData();toast('Test dáta vygenerované.');}catch(err){toast(err.message,true);}}
