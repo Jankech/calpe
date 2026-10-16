@@ -26,8 +26,6 @@ The scripts are designed so `01_schema.sql` and `03_import_legacy.sql` can be re
 - the existing custom bike-rental split weights
 - no payments, because the legacy `DB_Platby` sheet has no active records
 
-The deleted €1,000 Hotel test/old row is deliberately excluded.
-
 `Pavel` keeps the real admin Google e-mail entered in `02_seed.sql`. Other imported participants receive temporary addresses such as `adam@pending.local`. After login, replace them with the correct Google e-mails in **Viac → Účastníci**. Those exact e-mails are the access allow-list.
 
 ### 3. Configure Google login
