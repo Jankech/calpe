@@ -714,6 +714,44 @@ const _origDeleteExpense=deleteExpense;
 deleteExpense=async function(){const x=S.expenses.find(e=>e.id===S.expenseEditId);const p=x?.receipt_path;await _origDeleteExpense();if(p&&!S.expenses.find(e=>e.id===x.id))S.client.storage.from(MEDIA_BUCKET).remove([p]).catch(()=>{});};
 const _origRenderAllF=renderAll;
 renderAll=function(...a){const r=_origRenderAllF(...a);addReceiptInput();return r;};  
+
+/* ===== KCAL v7: denný graf ===== */
+const KCAL={km:30,m:1,beer:210,wine:120,spirits:100}; // rovnaké čísla ako v x.burned / x.drank
+const CAL_COLORS=['#0f8fa3','#ff6d2d','#7356a8','#348657','#c48f1d','#d6455d','#356ca4'];
+let calMode=localStorage.getItem('calpe-cal-mode')||'total';
+function calDaily(){
+  const days=new Set(),per={};
+  S.participants.forEach(p=>per[p.id]={});
+  S.rides.forEach(r=>{days.add(r.ride_date);(r.participant_ids||[]).forEach(id=>{if(!per[id])return;const d=per[id][r.ride_date]||={b:0,d:0};d.b+=Number(r.distance_km||0)*KCAL.km+Number(r.elevation_m||0)*KCAL.m;});});
+  S.drinks.forEach(x=>{const day=tripDateFromISO(x.consumed_at);days.add(day);const d=(per[x.participant_id]||={})[day]||=(per[x.participant_id][day]={b:0,d:0});d.d+=Number(x.beer||0)*KCAL.beer+Number(x.wine||0)*KCAL.wine+Number(x.spirits||0)*KCAL.spirits;});
+  return {days:[...days].filter(Boolean).sort(),per};
+}
+function calChart(){
+  const {days,per}=calDaily();if(!days.length)return '<div class="empty">Zatiaľ žiadne jazdy ani drinky.</div>';
+  const people=S.participants.filter(p=>days.some(d=>per[p.id]?.[d]));
+  const series=people.map((p,i)=>({p,c:CAL_COLORS[i%CAL_COLORS.length],v:days.map(d=>{const x=per[p.id]?.[d];return x?Math.round(x.b-x.d):0;})}));
+  const all=series.flatMap(s=>s.v),max=Math.max(100,...all),min=Math.min(0,...all);
+  const W=340,H=200,L=40,R=12,T=12,B=26,xs=i=>L+(days.length===1?(W-L-R)/2:i*(W-L-R)/(days.length-1)),ys=v=>T+(max-v)*(H-T-B)/(max-min||1);
+  const ticks=[max,Math.round((max+min)/2),min].filter((v,i,a)=>a.indexOf(v)===i);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" class="cal-svg">`;
+  ticks.forEach(t=>svg+=`<line x1="${L}" x2="${W-R}" y1="${ys(t)}" y2="${ys(t)}" class="${t===0?'zero':'grid'}"/><text x="${L-5}" y="${ys(t)+3}" text-anchor="end">${round(t)}</text>`);
+  if(min<0&&!ticks.includes(0))svg+=`<line x1="${L}" x2="${W-R}" y1="${ys(0)}" y2="${ys(0)}" class="zero"/>`;
+  days.forEach((d,i)=>svg+=`<text x="${xs(i)}" y="${H-8}" text-anchor="middle">${new Date(d+'T12:00:00').getDate()}.${new Date(d+'T12:00:00').getMonth()+1}.</text>`);
+  series.forEach(s=>{svg+=`<polyline fill="none" stroke="${s.c}" stroke-width="2.4" stroke-linejoin="round" points="${s.v.map((v,i)=>xs(i)+','+ys(v)).join(' ')}"/>`+s.v.map((v,i)=>`<circle cx="${xs(i)}" cy="${ys(v)}" r="3.2" fill="${s.c}"><title>${esc(s.p.name)} ${dateLabel(days[i])}: ${v>=0?'−':'+'}${round(Math.abs(v))} kcal</title></circle>`).join('');});
+  svg+='</svg>';
+  const legend=`<div class="cal-legend">${series.map(s=>`<span><i style="background:${s.c}"></i>${esc(s.p.name)}</span>`).join('')}</div>`;
+  return svg+legend+`<p class="media-hint">Denná bilancia: spálené jazdou mínus vypité. Nad nulou = deň „v pluse“ pre bicykel, pod nulou = vyhrali drinky.</p>`;
+}
+const _origRenderCalories=renderCalories;
+renderCalories=function(st){
+  const box=$('calories');if(!box)return _origRenderCalories(st);
+  let tg=document.getElementById('calToggle');
+  if(!tg){tg=document.createElement('div');tg.id='calToggle';tg.className='cal-toggle';box.parentNode.insertBefore(tg,box);}
+  tg.innerHTML=`<button type="button" data-m="total" class="${calMode==='total'?'active':''}">Spolu</button><button type="button" data-m="daily" class="${calMode==='daily'?'active':''}">Po dňoch</button>`;
+  tg.querySelectorAll('button').forEach(b=>b.onclick=()=>{calMode=b.dataset.m;localStorage.setItem('calpe-cal-mode',calMode);renderCalories(st);});
+  if(calMode==='daily'){box.innerHTML=calChart();hydrateAvatars(box);}else _origRenderCalories(st);
+};
+  
 init();
 })();
 /* ---------- FIX v2: klávesnica + zákaz zoomu ---------- */
