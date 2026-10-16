@@ -141,3 +141,16 @@ input[type=datetime-local]::-webkit-date-and-time-value{text-align:left;margin:0
 .rcpt-box{margin:6px 0 10px}
 .rcpt-view img{display:block;max-width:100%;max-height:340px;margin:0 auto;border-radius:12px;border:1px solid #e1e8ec}
 .rcpt-mark{font-size:12px}
+
+/* ===== KCAL v7 ===== */
+.cal-toggle{display:flex;gap:4px;background:#eef3f5;border-radius:11px;padding:3px;margin-bottom:10px}
+.cal-toggle button{flex:1;border:0;background:transparent;border-radius:9px;padding:7px;font-size:11px;font-weight:850;color:#5d7480}
+.cal-toggle button.active{background:#fff;color:var(--navy);box-shadow:0 2px 6px rgba(8,47,73,.1)}
+.cal-svg{width:100%;height:auto;display:block}
+.cal-svg text{font-size:9px;fill:#7b8b93;stroke:none;font-weight:700}
+.cal-svg circle{stroke:#fff;stroke-width:1.2}
+.cal-svg .grid{stroke:#e3eaee;stroke-width:1}
+.cal-svg .zero{stroke:#9fb0b8;stroke-width:1.2;stroke-dasharray:4 3}
+.cal-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.cal-legend span{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;color:#3e5866}
+.cal-legend i{width:14px;height:4px;border-radius:2px;display:inline-block}
