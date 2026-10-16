@@ -1,14 +1,261 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="sk">
 <head>
   <meta charset="utf-8">
-  <title>Cyklo sústredenie Calpe 🚴</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbzFc4cJ1Wjv9bF64fFYV4X3OKJC8tOGv0fbEHRS6GKfKpCgwAz7wof2MsgxnX_I1XEs/exec">
-  <script>location.replace('https://script.google.com/macros/s/AKfycbzFc4cJ1Wjv9bF64fFYV4X3OKJC8tOGv0fbEHRS6GKfKpCgwAz7wof2MsgxnX_I1XEs/exec');</script>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#082f49">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="format-detection" content="telephone=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <title>Calpe 2026</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="app.css">
 </head>
-<body style="font-family:Arial,sans-serif;text-align:center;padding:40px">
-  <p>🚴 Presmerúvam na aplikáciu…</p>
-  <p><a href="https://script.google.com/macros/s/AKfycbzFc4cJ1Wjv9bF64fFYV4X3OKJC8tOGv0fbEHRS6GKfKpCgwAz7wof2MsgxnX_I1XEs/exec">Ak sa nič nestane, kliknite sem.</a></p>
+<body data-view="expenses">
+  <svg class="sprite" aria-hidden="true">
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6M9 16h4"/></symbol>
+    <symbol id="i-bath" viewBox="0 0 24 24"><path d="M4 13h16v2a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-2Z"/><path d="M7 13V7a3 3 0 0 1 6 0v1M5 20v1M19 20v1"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v4a4 4 0 0 1-8 0V4Z"/><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 12v5M8 21h8M9 17h6"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 3h6l1 4H8l1-4ZM7 7l1 14h8l1-14M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-bike" viewBox="0 0 24 24"><circle cx="6" cy="17" r="4"/><circle cx="18" cy="17" r="4"/><path d="m6 17 4-8h4l4 8M9 12h7M11 6h3M10 9 8 6"/></symbol>
+    <symbol id="i-drink" viewBox="0 0 24 24"><path d="M6 4h12l-2 8a4 4 0 0 1-8 0L6 4Z"/><path d="M12 16v5M8 21h8M8 8h8"/></symbol>
+    <symbol id="i-bed" viewBox="0 0 24 24"><path d="M3 18v-9M3 14h18v4H3ZM7 14V9h5a4 4 0 0 1 4 4v1M5 18v2M19 18v2"/></symbol>
+    <symbol id="i-plane" viewBox="0 0 24 24"><path d="m3 11 18-7-7 18-3-8-8-3Z"/><path d="m11 14 4-4"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="m5 16-1-4 2-5h12l2 5-1 4H5Z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M6 12h12"/></symbol>
+    <symbol id="i-food" viewBox="0 0 24 24"><path d="M7 3v7M4 3v5a3 3 0 0 0 6 0V3M7 10v11M16 3v18M16 3c4 2 4 8 0 10"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2 11h10l3-7H7"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></symbol>
+    <symbol id="i-split" viewBox="0 0 24 24"><path d="M6 4v5a3 3 0 0 0 3 3h6a3 3 0 0 1 3 3v5"/><path d="m15 17 3 3 3-3M18 4v4"/></symbol>
+    <symbol id="i-other" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="8" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="16" cy="12" r="1"/></symbol>
+    <symbol id="i-euro" viewBox="0 0 24 24"><path d="M18 7a7 7 0 1 0 0 10M4 10h10M4 14h9"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></symbol>
+    <symbol id="i-mountain" viewBox="0 0 24 24"><path d="m3 20 7-13 4 7 2-3 5 9H3Z"/><path d="m8 11 2-4 2 4"/></symbol>
+    <symbol id="i-route" viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6h5a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8"/></symbol>
+    <symbol id="i-crash" viewBox="0 0 24 24"><path d="m12 2 2.2 5.5L20 5l-2.5 5.7L23 13l-5.5 2.2L20 21l-5.8-2.5L12 24l-2.2-5.5L4 21l2.5-5.8L1 13l5.5-2.3L4 5l5.8 2.5L12 2Z"/></symbol>
+    <symbol id="i-flat" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="m17 5 3-3M18 2h2v2"/></symbol>
+    <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14 6a5 5 0 0 0-7 7L2 18l4 4 5-5a5 5 0 0 0 7-7l-3 3-4-4 3-3Z"/></symbol>
+    <symbol id="i-sprint" viewBox="0 0 24 24"><path d="M4 7h9M2 12h9M5 17h8M14 4l7 8-7 8 2-8-2-8Z"/></symbol>
+    <symbol id="i-medal" viewBox="0 0 24 24"><circle cx="12" cy="14" r="5"/><path d="m9 3 3 6 3-6M7 3h4M13 3h4"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24"><path d="m3 7 4 4 5-7 5 7 4-4-2 11H5L3 7Z"/><path d="M6 21h12"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M4 6h14a2 2 0 0 1 2 2v11H5a2 2 0 0 1-2-2V6h1Z"/><path d="M4 6 16 3v3M15 11h5v4h-5a2 2 0 0 1 0-4Z"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 21a6 6 0 0 1 12 0M14 16a5 5 0 0 1 7 5"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5V3Z"/><path d="M8 3v6h8V3M8 21v-8h8v8"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5M12 18v.01"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M7 7a7 7 0 0 1 12 5M17 17a7 7 0 0 1-12-5"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H4v16h6M14 8l4 4-4 4M8 12h10"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7a7 7 0 0 0-.7-1.6l.9-1.9-2.1-2.1-1.9.9a7 7 0 0 0-1.6-.7L10.5 2h-3l-.7 2.4a7 7 0 0 0-1.6.7l-1.9-.9-2.1 2.1.9 1.9a7 7 0 0 0-.7 1.6L-1 10.5v3l2.4.7c.2.6.4 1.1.7 1.6l-.9 1.9 2.1 2.1 1.9-.9c.5.3 1 .5 1.6.7l.7 2.4h3l.7-2.4c.6-.2 1.1-.4 1.6-.7l1.9.9 2.1-2.1-.9-1.9c.3-.5.5-1 .7-1.6l2.4-.7Z" transform="translate(2 0) scale(.85)"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7h4l2-3h4l2 3h4a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="4"/></symbol>
+  </svg>
+
+  <div id="gate" class="gate">
+    <div class="gate-photo"></div>
+    <div class="gate-shade"></div>
+    <section class="gate-card" id="gateCard">
+      <div class="gate-logo"><img src="assets/icon.svg" alt=""></div>
+      <p class="eyebrow">CALPE 2026</p>
+      <h1 id="gateTitle">Načítavam výpravu…</h1>
+      <p id="gateText">Pripájam sa k spoločným dátam.</p>
+      <div id="gateActions" class="gate-actions"><span class="spinner"></span></div>
+      <details id="gateDetails" class="tech-details" hidden><summary>Technické detaily</summary><code id="gateTechnical"></code></details>
+    </section>
+  </div>
+
+  <div id="app" class="app" hidden>
+    <header class="hero">
+      <div class="hero-photo hero-expenses"></div>
+      <div class="hero-photo hero-bathroom"></div>
+      <div class="hero-photo hero-cup"></div>
+      <div class="hero-photo hero-more"></div>
+      <div class="hero-shade"></div>
+      <div class="hero-inner">
+        <img class="hero-logo" src="assets/icon.svg" alt="Calpe">
+        <div class="hero-copy">
+          <span class="eyebrow">CALPE 2026</span>
+          <h1 id="heroTitle">Výdavky</h1>
+          <p id="heroSubtitle">Spoločné náklady bez excelového utrpenia.</p>
+        </div>
+        <button class="me-button" id="meButton" type="button" aria-label="Môj profil"></button>
+      </div>
+    </header>
+
+    <div class="status-line"><span id="statusText">Pripravené</span><button id="refreshBtn" class="icon-button subtle" type="button" aria-label="Obnoviť"><svg><use href="#i-refresh"></use></svg></button></div>
+    <div id="toast" class="toast" role="status"></div>
+
+    <main>
+      <section id="view-expenses" class="view active">
+        <nav class="segmented" data-tabs="expenses">
+          <button class="active" data-tab="expense-list">Výdavky</button>
+          <button data-tab="payments">Platby</button>
+          <button data-tab="settlement">Vyrovnanie</button>
+        </nav>
+
+        <div id="tab-expense-list" class="tab-pane active">
+          <details class="card form-accordion" id="newExpenseAccordion">
+            <summary><span><svg class="icon"><use href="#i-plus"></use></svg>Nový výdavok</span><svg class="chev"><use href="#i-down"></use></svg></summary>
+            <form id="expenseForm" class="form-body">
+              <div class="form-grid two">
+                <label>Dátum<input type="date" id="expDate" required></label>
+                <label>Kategória<select id="expCategory" required></select></label>
+              </div>
+              <label>Popis<input id="expDescription" placeholder="napr. večera pri mori"></label>
+              <div class="form-grid two">
+                <label>Suma<input type="number" id="expAmount" min="0.01" step="0.01" inputmode="decimal" required></label>
+                <label>Mena<select id="expCurrency"></select></label>
+              </div>
+              <label>Zaplatil<select id="expPaidBy"></select></label>
+              <label>Koho sa týka</label><div id="expParticipants" class="choice-grid"></div>
+              <label>Spôsob delenia<select id="expSplit"><option value="equal">Rovnomerne</option><option value="nights">Podľa nocí</option><option value="custom">Vlastné váhy</option></select></label>
+              <div id="expCustom" class="custom-weights"></div>
+              <button class="primary full" type="submit"><svg class="icon"><use href="#i-save"></use></svg>Uložiť výdavok</button>
+            </form>
+          </details>
+
+          <section class="card">
+            <div class="card-head"><div><p class="eyebrow dark">DENNÍK</p><h2>Výdavky</h2></div><span class="count-pill" id="expenseCount"></span></div>
+            <div id="expenseFeed" class="feed"></div>
+          </section>
+        </div>
+
+        <div id="tab-payments" class="tab-pane">
+          <details class="card form-accordion">
+            <summary><span><svg class="icon"><use href="#i-plus"></use></svg>Nová platba</span><svg class="chev"><use href="#i-down"></use></svg></summary>
+            <form id="paymentForm" class="form-body">
+              <div class="form-grid two"><label>Dátum<input id="payDate" type="date" required></label><label>Mena<select id="payCurrency"></select></label></div>
+              <div class="form-grid two"><label>Platí<select id="payFrom"></select></label><label>Komu<select id="payTo"></select></label></div>
+              <label>Suma<input id="payAmount" type="number" min="0.01" step="0.01" required></label>
+              <label>Poznámka<input id="payNote" placeholder="napr. vyrovnanie ubytovania"></label>
+              <button class="primary full" type="submit"><svg class="icon"><use href="#i-save"></use></svg>Uložiť platbu</button>
+            </form>
+          </details>
+          <section class="card"><div class="card-head"><h2>Zaznamenané platby</h2></div><div id="paymentFeed" class="feed"></div></section>
+        </div>
+
+        <div id="tab-settlement" class="tab-pane">
+          <section class="card"><div class="card-head"><h2>Kto komu platí</h2></div><div id="settlementTransfers" class="transfer-list"></div></section>
+          <section class="card"><div class="card-head"><h2>Zostatky</h2></div><div id="balanceList" class="balance-list"></div></section>
+          <section class="card"><div class="card-head"><h2>Náklady podľa kategórie</h2></div><div id="categoryCosts" class="metric-list"></div></section>
+        </div>
+      </section>
+
+      <section id="view-bathroom" class="view">
+        <section class="card bathroom-summary"><div><p class="eyebrow dark">ROZVRH</p><h2>Ranné sloty</h2><p>Dni sú zbalené, aby ste nemuseli rolovať celú dovolenku.</p></div><svg class="big-line-icon"><use href="#i-bath"></use></svg></section>
+        <div id="bathroomDays" class="day-accordions"></div>
+        <details class="card form-accordion matrix-accordion"><summary><span>Kontrola rezervácií</span><svg class="chev"><use href="#i-down"></use></svg></summary><div id="bathroomMatrix" class="form-body matrix-list"></div></details>
+      </section>
+
+      <section id="view-cup" class="view">
+        <nav class="segmented cup-tabs" data-tabs="cup">
+          <button class="active" data-tab="ranking">Poradie</button>
+          <button data-tab="rides">Jazdy</button>
+          <button data-tab="drinks">Drinky</button>
+          <button data-tab="badges">Odznaky</button>
+        </nav>
+
+        <div id="tab-ranking" class="tab-pane active">
+          <section class="card"><div id="cupSummary" class="summary-grid"></div></section>
+          <section class="card ranking-card-main">
+            <div class="card-head"><div><p class="eyebrow dark">CALPE CUP</p><h2>Celkové poradie</h2></div><svg class="big-line-icon"><use href="#i-trophy"></use></svg></div>
+            <div id="scoreLegend" class="score-legend"></div>
+            <div id="rankingList" class="ranking-list"></div>
+          </section>
+          <details class="card form-accordion"><summary><span>Pravidlá bodovania</span><svg class="chev"><use href="#i-down"></use></svg></summary><div id="scoreRules" class="form-body metric-list"></div></details>
+
+          <section class="card everest-card">
+            <div class="everest-art"><svg><use href="#i-mountain"></use></svg><div><span id="everestBig">0×</span><small>Everest ako partia</small></div></div>
+            <div id="everestGroup" class="everest-group"></div>
+            <div id="everestPeople" class="everest-people"></div>
+          </section>
+
+          <div class="two-cards">
+            <section class="card"><div class="card-head"><h2>Km vs. social</h2></div><div id="quadrant" class="quadrant"></div></section>
+            <section class="card"><div class="card-head"><h2>Spálené vs. vypité</h2></div><div id="calories" class="calories"></div></section>
+          </div>
+        </div>
+
+        <div id="tab-rides" class="tab-pane">
+          <details class="card form-accordion" id="newRideAccordion">
+            <summary><span><svg class="icon"><use href="#i-plus"></use></svg>Nová jazda</span><svg class="chev"><use href="#i-down"></use></svg></summary>
+            <form id="rideForm" class="form-body">
+              <div class="form-grid two"><label>Dátum<input id="rideDate" type="date" required></label><label>Trasa<input id="rideRoute" placeholder="napr. Coll de Rates" required></label></div>
+              <div class="form-grid three"><label>Km<input id="rideKm" type="number" min="0.1" step="0.1" inputmode="decimal" required></label><label>Prevýšenie (m)<input id="rideElevation" type="number" min="0" step="1" inputmode="numeric"></label><label>Čas<input id="rideDuration" placeholder="3:45" inputmode="numeric"></label></div>
+              <label>Kto išiel</label><div id="rideParticipants" class="choice-grid"></div>
+              <label>Poznámka<textarea id="rideNotes" rows="2" placeholder="voliteľné"></textarea></label>
+              <div class="event-builder-head"><div><p class="eyebrow dark">UDALOSTI</p><h3>Prémie a malé katastrofy</h3></div></div>
+              <div class="event-add-row"><button type="button" class="soft-button" data-add-event="sprint"><svg class="icon"><use href="#i-sprint"></use></svg>Šprint</button><button type="button" class="soft-button" data-add-event="hill"><svg class="icon"><use href="#i-mountain"></use></svg>Kopec</button><button type="button" class="soft-button" data-add-event="mishap"><svg class="icon"><use href="#i-wrench"></use></svg>Mishap</button></div>
+              <div id="newRideEvents" class="event-editor"></div>
+              <button class="primary full" type="submit"><svg class="icon"><use href="#i-save"></use></svg>Uložiť jazdu</button>
+            </form>
+          </details>
+          <section class="card"><div class="card-head"><div><p class="eyebrow dark">DENNÍK</p><h2>Jazdy</h2></div><span class="count-pill" id="rideCount"></span></div><div id="rideFeed" class="feed"></div></section>
+        </div>
+
+        <div id="tab-drinks" class="tab-pane">
+          <details class="card form-accordion" id="newDrinkAccordion">
+            <summary><span><svg class="icon"><use href="#i-plus"></use></svg>Nový zápis</span><svg class="chev"><use href="#i-down"></use></svg></summary>
+            <form id="drinkForm" class="form-body">
+              <div class="form-grid two"><label>Dátum<input id="drinkDate" type="date" required></label><label>Čas<input id="drinkTime" type="time" required></label></div>
+              <div class="form-grid two"><label>Meno<select id="drinkPerson"></select></label><label>Príležitosť<select id="drinkOccasion"><option value="lunch">Obed</option><option value="dinner">Večera</option><option value="evening" selected>Večer</option><option value="other">Iné</option></select></label></div>
+              <div class="form-grid three"><label>Pivo<input id="drinkBeer" type="number" min="0" step="1" value="0"></label><label>Víno<input id="drinkWine" type="number" min="0" step="1" value="0"></label><label>Panák<input id="drinkSpirits" type="number" min="0" step="1" value="0"></label></div>
+              <label>Poznámka<input id="drinkNote" placeholder="voliteľné"></label>
+              <div class="info-strip"><svg class="icon"><use href="#i-check"></use></svg><span>Každý drink = 1 bod. Sober day = +2 body; celý trip bez alkoholu = +20 bodov.</span></div>
+              <button class="primary full" type="submit"><svg class="icon"><use href="#i-save"></use></svg>Uložiť</button>
+            </form>
+          </details>
+          <section class="card"><div class="card-head"><h2>Drink & recovery stats</h2></div><div id="drinkStats" class="summary-grid"></div></section>
+          <section class="card"><div class="card-head"><h2>Denník drinkov</h2></div><div id="drinkFeed" class="feed"></div></section>
+        </div>
+
+        <div id="tab-badges" class="tab-pane">
+          <section id="featuredBadge" class="featured-badge"></section>
+          <div id="badgeFamilies" class="badge-families"></div>
+        </div>
+      </section>
+
+      <section id="view-more" class="view">
+        <div id="settingsSections" class="settings-accordions">
+          <details class="card settings-panel" open><summary><span><svg class="icon"><use href="#i-calendar"></use></svg>Pobyt</span><svg class="chev"><use href="#i-down"></use></svg></summary><div class="form-body" id="staySettings"></div></details>
+          <details class="card settings-panel admin-only"><summary><span><svg class="icon"><use href="#i-users"></use></svg>Účastníci</span><svg class="chev"><use href="#i-down"></use></svg></summary><div class="form-body" id="participantSettings"></div></details>
+          <details class="card settings-panel admin-only"><summary><span><svg class="icon"><use href="#i-euro"></use></svg>Meny</span><svg class="chev"><use href="#i-down"></use></svg></summary><div class="form-body" id="currencySettings"></div></details>
+          <details class="card settings-panel admin-only"><summary><span><svg class="icon"><use href="#i-gear"></use></svg>Výprava</span><svg class="chev"><use href="#i-down"></use></svg></summary><div class="form-body" id="tripSettings"></div></details>
+          <details class="card settings-panel"><summary><span><svg class="icon"><use href="#i-user"></use></svg>Účet</span><svg class="chev"><use href="#i-down"></use></svg></summary><div class="form-body" id="accountSettings"></div></details>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" id="bottomNav">
+      <button class="active" data-view="expenses"><span class="nav-icon-wrap"><svg><use href="#i-receipt"></use></svg></span><span>Výdavky</span></button>
+      <button data-view="bathroom"><span class="nav-icon-wrap"><svg><use href="#i-bath"></use></svg></span><span>Kúpeľňa</span></button>
+      <button data-view="cup"><span class="nav-icon-wrap"><svg><use href="#i-trophy"></use></svg></span><span>Calpe Cup</span></button>
+      <button data-view="more"><span class="nav-icon-wrap"><svg><use href="#i-more"></use></svg></span><span>Viac</span></button>
+    </nav>
+  </div>
+
+  <div id="sheetBackdrop" class="sheet-backdrop"></div>
+  <section id="expenseSheet" class="bottom-sheet" aria-hidden="true">
+    <div class="sheet-handle"></div>
+    <header class="sheet-head"><div id="expenseSheetIcon" class="sheet-icon"></div><div><p class="eyebrow dark">DETAIL VÝDAVKU</p><h2 id="expenseSheetTitle">Výdavok</h2></div><button class="icon-button sheet-close" data-close-sheet="expense"><svg><use href="#i-close"></use></svg></button></header>
+    <form id="expenseEditForm" class="sheet-content"></form>
+  </section>
+
+  <section id="rideSheet" class="bottom-sheet" aria-hidden="true">
+    <div class="sheet-handle"></div>
+    <header class="sheet-head"><div class="sheet-icon ride"><svg><use href="#i-bike"></use></svg></div><div><p class="eyebrow dark">DETAIL JAZDY</p><h2 id="rideSheetTitle">Jazda</h2></div><button class="icon-button sheet-close" data-close-sheet="ride"><svg><use href="#i-close"></use></svg></button></header>
+    <div id="rideSheetContent" class="sheet-content"></div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
