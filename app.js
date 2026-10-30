@@ -749,6 +749,26 @@ renderCalories=function(st){
   if(calMode==='daily'){box.innerHTML=calChart();hydrateAvatars(box);}else _origRenderCalories(st);
 };
   
+/* ===== FIX v11: km s desatinnou čiarkou + čas bez dvojbodky ===== */
+const KM_IDS=['rideKm','rsKm'],TIME_IDS=['rideDuration','rsDuration'];
+function prepRideInputs(root=document){
+  KM_IDS.forEach(id=>{const el=root.querySelector('#'+id);if(!el||el.dataset.fx)return;el.dataset.fx=1;
+    el.type='text';el.setAttribute('inputmode','decimal');el.setAttribute('autocomplete','off');el.placeholder=el.placeholder||'napr. 62,5';});
+  TIME_IDS.forEach(id=>{const el=root.querySelector('#'+id);if(!el||el.dataset.fx)return;el.dataset.fx=1;
+    el.type='text';el.setAttribute('inputmode','numeric');el.setAttribute('autocomplete','off');el.placeholder='h:mm, napr. 2:45';});
+}
+document.addEventListener('input',e=>{const el=e.target;
+  if(KM_IDS.includes(el.id)){const v=el.value.replace(',','.').replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1');if(v!==el.value)el.value=v;}
+  if(TIME_IDS.includes(el.id)){const d=el.value.replace(/\D/g,'').slice(0,4);el.value=d.length>=3?d.slice(0,-2)+':'+d.slice(-2):d;}
+});
+document.addEventListener('focusout',e=>{const el=e.target;
+  if(TIME_IDS.includes(el.id)&&/^\d{1,2}$/.test(el.value))el.value='0:'+el.value.padStart(2,'0');
+});
+document.addEventListener('focusin',()=>prepRideInputs());
+const _origRenderAllRide=renderAll;
+renderAll=function(...a){const r=_origRenderAllRide(...a);prepRideInputs();return r;};
+const _origRenderRideEdit=renderRideEdit;
+renderRideEdit=function(...a){const r=_origRenderRideEdit(...a);prepRideInputs();return r;};  
 init();
 })();
 /* ---------- FIX v2: klávesnica + zákaz zoomu ---------- */
