@@ -835,7 +835,8 @@ function gpxPreview(pts){
     w:Math.round((maxX-minX)/span*1000),h:Math.round((maxY-minY)/span*1000),
     map:idx.map(i=>[Math.round((xs[i]-minX)/span*1000),Math.round((ys[i]-minY)/span*1000)]),
     ele:hasEle?idx.filter(i=>isFinite(eles[i])).map(i=>[km?Math.round(dist[i]/km*1000):0,Math.round(eles[i])]):[],
-    min:hasEle?Math.round(Math.min(...fin)):null,max:hasEle?Math.round(Math.max(...fin)):null};
+    min:hasEle?Math.round(Math.min(...fin)):null,max:hasEle?Math.round(Math.max(...fin)):null,
+    ll:pts.filter((p,i)=>i%Math.ceil(pts.length/400)===0||i===pts.length-1).map(p=>[Math.round(p.lat*1e5)/1e5,Math.round(p.lon*1e5)/1e5])};
 }
 function gpxMapSvg(pv){
   const W=80,H=50,P=4,s=Math.min((W-2*P)/Math.max(pv.w,1),(H-2*P)/Math.max(pv.h,1)),ox=(W-pv.w*s)/2,oy=(H-pv.h*s)/2;
@@ -946,6 +947,71 @@ deleteRide=async function(...a){
 };
 const _origRenderAllGpx=renderAll;
 renderAll=function(...a){const res=_origRenderAllGpx(...a);addGpxNewInput();return res;};
+
+/* ===== MAPA v16: všetky jazdy na mape ===== */
+const RIDER_COLORS=['#0f8fa3','#ff6d2d','#7356a8','#348657','#c48f1d','#d6455d','#356ca4','#8a5a2b'];
+const riderColor=id=>RIDER_COLORS[Math.max(0,S.participants.findIndex(p=>p.id===id))%RIDER_COLORS.length];
+const rideOwner=r=>S.participants.find(p=>p.user_id&&p.user_id===r.created_by)?.id||(r.participant_ids||[])[0]||null;
+const M={map:null,layers:{},sig:'',fitted:false,hidden:new Set()};
+function mapState(t){const s=$('rideMapState');if(s){s.textContent=t;s.hidden=!t;}}
+function ensureMapCard(){
+  if($('rideMapCard'))return true;
+  const feed=$('rideFeed')?.closest('.card');if(!feed)return false;
+  const el=document.createElement('section');el.id='rideMapCard';el.className='card ride-map-card';
+  el.innerHTML=`<div class="card-head"><div><p class="eyebrow dark">MAPA</p><h2>Všetky jazdy</h2></div><span class="count-pill" id="rideMapCount"></span></div><div class="map-filter" id="rideMapFilter"></div><div class="ride-map-wrap"><div id="rideMap" class="ride-map"></div><div id="rideMapState" class="ride-map-state">Načítavam mapu…</div></div><p class="media-hint">Ťukni na trasu pre detail jazdy. Farba = kto jazdu zapísal.</p>`;
+  feed.parentNode.insertBefore(el,feed);return true;
+}
+function showLayers(){Object.values(M.layers).forEach(x=>M.hidden.has(x.owner)?x.group.remove():x.group.addTo(M.map));}
+function fitMap(force){
+  const el=$('rideMap');if(!M.map||!el?.offsetWidth)return;
+  M.map.invalidateSize();if(M.fitted&&!force)return;
+  const vis=Object.values(M.layers).filter(x=>!M.hidden.has(x.owner));if(!vis.length)return;
+  const b=L.latLngBounds([]);vis.forEach(x=>b.extend(x.bounds));
+  M.map.fitBounds(b,{padding:[18,18],maxZoom:14});M.fitted=true;
+}
+function renderMapFilter(owners){
+  const box=$('rideMapFilter');if(!box)return;
+  const people=S.participants.filter(p=>owners.has(p.id));
+  box.innerHTML=people.length<2?'':`<span class="map-filter-label">Jazdci:</span>`+people.map(p=>{const off=M.hidden.has(p.id);return `<button type="button" class="map-chip${off?' off':''}" data-mp="${esc(p.id)}" aria-pressed="${!off}" style="--c:${riderColor(p.id)}"><i></i>${esc(p.name)}</button>`;}).join('')+`<button type="button" class="map-chip all" data-mp="">Všetci</button>`;
+  box.onclick=e=>{const b=e.target.closest('[data-mp]');if(!b)return;const id=b.dataset.mp;
+    if(!id)M.hidden.clear();else if(M.hidden.has(id))M.hidden.delete(id);else M.hidden.add(id);
+    showLayers();renderMapFilter(owners);if(!id)fitMap(true);};
+}
+function renderRideMap(){
+  if(!ensureMapCard())return;
+  if(typeof L==='undefined')return mapState('Mapu sa nepodarilo načítať. Skús obnoviť stránku.');
+  const rides=S.rides.filter(r=>gpxPv(r)?.ll?.length>1);
+  $('rideMapCount').textContent=`${rides.length} trás`;
+  if(!M.map){
+    M.map=L.map('rideMap',{scrollWheelZoom:false});
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(M.map);
+    M.map.setView([38.64,0.04],10);
+  }
+  const sig=rides.map(r=>{const ll=gpxPv(r).ll;return r.id+':'+rideOwner(r)+':'+ll.length+':'+ll[0];}).join('|');
+  if(sig!==M.sig){
+    M.sig=sig;M.fitted=false;
+    Object.values(M.layers).forEach(x=>x.group.remove());M.layers={};
+    rides.forEach(r=>{
+      const pv=gpxPv(r),owner=rideOwner(r),c=riderColor(owner);
+      const tip=`<b>${esc(r.route||'Jazda')}</b><br>${dateLabel(r.ride_date)} · ${round(r.distance_km||pv.km,1)} km · ↗ ${round(r.elevation_m||pv.gain)} m`;
+      const line=L.polyline(pv.ll,{color:c,weight:3.5,opacity:.88});
+      const hit=L.polyline(pv.ll,{color:c,weight:18,opacity:0});
+      const start=L.circleMarker(pv.ll[0],{radius:4,color:'#fff',weight:1.5,fillColor:c,fillOpacity:1});
+      [line,hit,start].forEach(l=>{l.on('click',e=>{L.DomEvent.stop(e);openRideSheet(r.id);});l.bindTooltip(tip,{sticky:true,direction:'top'});});
+      M.layers[r.id]={owner,group:L.layerGroup([line,hit,start]),bounds:line.getBounds()};
+    });
+  }
+  renderMapFilter(new Set(rides.map(rideOwner)));
+  showLayers();
+  mapState(rides.length?'':'Zatiaľ žiadna jazda nemá GPX. Pridaj GPX pri jazde a trasa sa zobrazí tu.');
+  fitMap();
+}
+const _origRenderRidesMap=renderRides;
+renderRides=function(...a){const res=_origRenderRidesMap(...a);try{renderRideMap();}catch(e){console.warn('Mapa',e);}return res;};
+const _origSwitchTabMap=switchTab;
+switchTab=function(...a){const res=_origSwitchTabMap(...a);setTimeout(()=>fitMap(),80);return res;};
+const _origNavigateMap=navigate;
+navigate=function(...a){const res=_origNavigateMap(...a);setTimeout(()=>fitMap(),80);return res;};
   
 init();
 })();
