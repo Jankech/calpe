@@ -1120,6 +1120,15 @@ bootSession=async function(...a){
   applyRoute(h);
 };
 window.addEventListener('hashchange',()=>applyRoute(location.hash));
+
+  /* ===== VYROVNANIE v23: najprv bilancia, potom platby ===== */
+(function(){
+  const sum=$('balanceList')?.closest('.card'),pay=$('settlementTransfers')?.closest('.card');
+  if(!sum||!pay||sum===pay)return;
+  const box=sum.parentNode;
+  if(pay.parentNode===box)box.insertBefore(sum,pay);
+  else box.insertBefore(sum,box.firstElementChild);
+})();
   
 init();
 })();
