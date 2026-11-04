@@ -768,7 +768,50 @@ document.addEventListener('focusin',()=>prepRideInputs());
 const _origRenderAllRide=renderAll;
 renderAll=function(...a){const r=_origRenderAllRide(...a);prepRideInputs();return r;};
 const _origRenderRideEdit=renderRideEdit;
-renderRideEdit=function(...a){const r=_origRenderRideEdit(...a);prepRideInputs();return r;};  
+renderRideEdit=function(...a){const r=_origRenderRideEdit(...a);prepRideInputs();return r;}; 
+
+/* ===== BILANCIA v12: rozbaľovací rozpis po osobách ===== */
+const _origSettlementBal=renderSettlement;
+const balOpen=new Set();
+renderSettlement=function(){
+  _origSettlementBal();
+  const box=$('balanceList');if(!box)return;
+  const z=balances(),per={};
+  S.participants.forEach(p=>per[p.id]={paid:[],cats:{}});
+  S.expenses.forEach(x=>{
+    const tot=centsEUR(x.amount,x.currency_code);
+    if(per[x.paid_by])per[x.paid_by].paid.push({x,c:tot});
+    Object.entries(expenseShares(x)).forEach(([id,c])=>{if(!per[id]||!c)return;const n=category(x.category_id)?.name||'Iné';(per[id].cats[n]||=[]).push({x,c});});
+  });
+  const item=(x,c,sign)=>`<div class="bal-item"><span class="bal-item-copy"><b>${esc(x.description||category(x.category_id)?.name||'Výdavok')}</b><small>${dateLabel(x.expense_date)}${x.currency_code!=='EUR'?` · ${round(x.amount,2)} ${esc(x.currency_code)}`:''}</small></span><strong class="${sign>0?'plus':'minus'}">${sign>0?'+':'−'}${eur(c)}</strong></div>`;
+  const sub=(key,label,count,total,sign,body)=>`<details class="bal-sub" data-bal-key="${esc(key)}" ${balOpen.has(key)?'open':''}><summary><span class="bal-label">${esc(label)}${count?` <small>${count}×</small>`:''}</span><strong class="${sign>0?'plus':'minus'}">${sign>0?'+':'−'}${eur(total)}</strong>${icon('down','chev')}</summary><div class="bal-items">${body}</div></details>`;
+  const lineRow=(label,val,sign)=>val?`<div class="bal-line"><span class="bal-label">${label}</span><strong class="${sign>0?'plus':'minus'}">${sign>0?'+':'−'}${eur(val)}</strong></div>`:'';
+  box.innerHTML=S.participants.map(p=>{
+    const b=z[p.id],d=per[p.id],cls=b.balance>0?'plus':b.balance<0?'minus':'';
+    const cats=Object.entries(d.cats).map(([n,it])=>[n,it,it.reduce((s,i)=>s+i.c,0)]).sort((a,c)=>c[2]-a[2]);
+    const paidBody=d.paid.length?d.paid.sort((a,c)=>String(c.x.expense_date).localeCompare(String(a.x.expense_date))).map(i=>item(i.x,i.c,1)).join(''):'<div class="empty">Zatiaľ nič nezaplatil(a).</div>';
+    const catsHtml=cats.length?cats.map(([n,it,t])=>sub(p.id+'|'+n,n,it.length,t,-1,it.sort((a,c)=>String(c.x.expense_date).localeCompare(String(a.x.expense_date))).map(i=>item(i.x,i.c,-1)).join(''))).join(''):'<div class="empty">Žiadne podiely.</div>';
+    const status=b.balance>0?'Má dostať':b.balance<0?'Má doplatiť':'Vyrovnané';
+    return `<details class="bal-card" data-bal-key="${esc(p.id)}" ${balOpen.has(p.id)?'open':''}>
+      <summary class="bal-head">${avatarHTML(p,'s')}<b class="bal-name">${esc(p.name)}</b><strong class="${cls}">${b.balance>0?'+':''}${eur(b.balance)}</strong>${icon('down','chev')}</summary>
+      <div class="bal-body">
+        <div class="bal-sec"><p class="eyebrow dark">ZAPLATIL(A) ZA SKUPINU</p>
+          ${sub(p.id+'|__paid','Zaplatil(a) za skupinu',d.paid.length,b.paid,1,paidBody)}
+          ${lineRow('Odoslané platby',b.sent,1)}
+        </div>
+        <div class="bal-sec"><p class="eyebrow dark">PODIEL PODĽA KATEGÓRIÍ</p>
+          ${catsHtml}
+          ${lineRow('Prijaté platby',b.received,-1)}
+        </div>
+        <div class="bal-total"><span>Spolu podiel</span><strong class="minus">−${eur(b.share)}</strong></div>
+        <div class="bal-total final"><span>${status}</span><strong class="${cls}">${eur(Math.abs(b.balance))}</strong></div>
+      </div></details>`;
+  }).join('');
+  box.querySelectorAll('details[data-bal-key]').forEach(el=>el.addEventListener('toggle',()=>{const k=el.dataset.balKey;el.open?balOpen.add(k):balOpen.delete(k);}));
+  hydrateAvatars(box);
+};
+
+  
 init();
 })();
 /* ---------- FIX v2: klávesnica + zákaz zoomu ---------- */
