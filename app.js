@@ -948,34 +948,42 @@ deleteRide=async function(...a){
 const _origRenderAllGpx=renderAll;
 renderAll=function(...a){const res=_origRenderAllGpx(...a);addGpxNewInput();return res;};
 
-/* ===== MAPA v16: všetky jazdy na mape ===== */
+/* ===== MAPA v18: šedé trasy, zvýraznenie jazdca ===== */
 const RIDER_COLORS=['#0f8fa3','#ff6d2d','#7356a8','#348657','#c48f1d','#d6455d','#356ca4','#8a5a2b'];
+const MAP_GREY='#5f7480';
 const riderColor=id=>RIDER_COLORS[Math.max(0,S.participants.findIndex(p=>p.id===id))%RIDER_COLORS.length];
-const rideOwner=r=>S.participants.find(p=>p.user_id&&p.user_id===r.created_by)?.id||(r.participant_ids||[])[0]||null;
-const M={map:null,layers:{},sig:'',fitted:false,hidden:new Set()};
+const rideRiders=r=>(r.participant_ids||[]).filter(id=>participant(id));
+const M={map:null,layers:{},sig:'',fitted:false,solo:null};
 function mapState(t){const s=$('rideMapState');if(s){s.textContent=t;s.hidden=!t;}}
 function ensureMapCard(){
   if($('rideMapCard'))return true;
   const feed=$('rideFeed')?.closest('.card');if(!feed)return false;
   const el=document.createElement('section');el.id='rideMapCard';el.className='card ride-map-card';
-  el.innerHTML=`<div class="card-head"><div><p class="eyebrow dark">MAPA</p><h2>Všetky jazdy</h2></div><span class="count-pill" id="rideMapCount"></span></div><div class="map-filter" id="rideMapFilter"></div><div class="ride-map-wrap"><div id="rideMap" class="ride-map"></div><div id="rideMapState" class="ride-map-state">Načítavam mapu…</div></div><p class="media-hint">Ťukni na trasu pre detail jazdy. Farba = kto jazdu zapísal.</p>`;
+  el.innerHTML=`<div class="card-head"><div><p class="eyebrow dark">MAPA</p><h2>Všetky jazdy</h2></div><span class="count-pill" id="rideMapCount"></span></div><div class="map-filter" id="rideMapFilter"></div><div class="ride-map-wrap"><div id="rideMap" class="ride-map"></div><div id="rideMapState" class="ride-map-state">Načítavam mapu…</div></div><p class="media-hint">Ťukni na meno – jeho jazdy sa zvýraznia farbou. Ťukni na trasu pre detail.</p>`;
   feed.parentNode.insertBefore(el,feed);return true;
 }
-function showLayers(){Object.values(M.layers).forEach(x=>M.hidden.has(x.owner)?x.group.remove():x.group.addTo(M.map));}
+const isHi=x=>!!M.solo&&x.ids.includes(M.solo);
+function rideStyle(x){return isHi(x)?{color:riderColor(M.solo),weight:4.5,opacity:.9}:{color:MAP_GREY,weight:3,opacity:M.solo?.3:.55};}
+function showLayers(){
+  const all=Object.values(M.layers);
+  all.forEach(x=>{const st=rideStyle(x);x.line.setStyle(st);x.start.setStyle({fillColor:st.color,fillOpacity:Math.max(st.opacity,.6)});x.group.addTo(M.map);});
+  all.filter(isHi).forEach(x=>{x.line.bringToFront();x.hit.bringToFront();x.start.bringToFront();});
+}
 function fitMap(force){
   const el=$('rideMap');if(!M.map||!el?.offsetWidth)return;
   M.map.invalidateSize();if(M.fitted&&!force)return;
-  const vis=Object.values(M.layers).filter(x=>!M.hidden.has(x.owner));if(!vis.length)return;
+  const all=Object.values(M.layers),hi=all.filter(isHi),vis=hi.length?hi:all;if(!vis.length)return;
   const b=L.latLngBounds([]);vis.forEach(x=>b.extend(x.bounds));
   M.map.fitBounds(b,{padding:[18,18],maxZoom:14});M.fitted=true;
 }
-function renderMapFilter(owners){
+function renderMapFilter(ids){
   const box=$('rideMapFilter');if(!box)return;
-  const people=S.participants.filter(p=>owners.has(p.id));
-  box.innerHTML=people.length<2?'':`<span class="map-filter-label">Jazdci:</span>`+people.map(p=>{const off=M.hidden.has(p.id);return `<button type="button" class="map-chip${off?' off':''}" data-mp="${esc(p.id)}" aria-pressed="${!off}" style="--c:${riderColor(p.id)}"><i></i>${esc(p.name)}</button>`;}).join('')+`<button type="button" class="map-chip all" data-mp="">Všetci</button>`;
+  const people=S.participants.filter(p=>ids.has(p.id));
+  if(!people.length){box.innerHTML='';return;}
+  box.innerHTML=`<span class="map-filter-label">Jazdci:</span>`+people.map(p=>`<button type="button" class="map-chip" data-mp="${esc(p.id)}" aria-pressed="${M.solo===p.id}" style="--c:${riderColor(p.id)}"><i></i>${esc(p.name)}</button>`).join('')
+    +(M.solo?`<button type="button" class="map-chip all" data-mp="">Všetci</button>`:'');
   box.onclick=e=>{const b=e.target.closest('[data-mp]');if(!b)return;const id=b.dataset.mp;
-    if(!id)M.hidden.clear();else if(M.hidden.has(id))M.hidden.delete(id);else M.hidden.add(id);
-    showLayers();renderMapFilter(owners);if(!id)fitMap(true);};
+    M.solo=(!id||M.solo===id)?null:id;showLayers();renderMapFilter(ids);fitMap(true);};
 }
 function renderRideMap(){
   if(!ensureMapCard())return;
@@ -987,21 +995,26 @@ function renderRideMap(){
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'}).addTo(M.map);
     M.map.setView([38.64,0.04],10);
   }
-  const sig=rides.map(r=>{const ll=gpxPv(r).ll;return r.id+':'+rideOwner(r)+':'+ll.length+':'+ll[0];}).join('|');
+  const sig=rides.map(r=>{const ll=gpxPv(r).ll;return r.id+':'+rideRiders(r).join(',')+':'+ll.length+':'+ll[0];}).join('|');
   if(sig!==M.sig){
     M.sig=sig;M.fitted=false;
     Object.values(M.layers).forEach(x=>x.group.remove());M.layers={};
     rides.forEach(r=>{
-      const pv=gpxPv(r),owner=rideOwner(r),c=riderColor(owner);
-      const tip=`<b>${esc(r.route||'Jazda')}</b><br>${dateLabel(r.ride_date)} · ${round(r.distance_km||pv.km,1)} km · ↗ ${round(r.elevation_m||pv.gain)} m`;
-      const line=L.polyline(pv.ll,{color:c,weight:3.5,opacity:.88});
-      const hit=L.polyline(pv.ll,{color:c,weight:18,opacity:0});
-      const start=L.circleMarker(pv.ll[0],{radius:4,color:'#fff',weight:1.5,fillColor:c,fillOpacity:1});
-      [line,hit,start].forEach(l=>{l.on('click',e=>{L.DomEvent.stop(e);openRideSheet(r.id);});l.bindTooltip(tip,{sticky:true,direction:'top'});});
-      M.layers[r.id]={owner,group:L.layerGroup([line,hit,start]),bounds:line.getBounds()};
+      const pv=gpxPv(r),ids=rideRiders(r);
+      const who=ids.map(id=>`<span><i style="background:${riderColor(id)}"></i>${esc(participant(id).name)}</span>`).join('');
+      const tip=`<b>${esc(r.route||'Jazda')}</b><br>${dateLabel(r.ride_date)} · ${round(r.distance_km||pv.km,1)} km · ↗ ${round(r.elevation_m||pv.gain)} m<div class="map-tip-riders">${who}</div>`;
+      const line=L.polyline(pv.ll,{weight:3,lineJoin:'round',lineCap:'round',interactive:false});
+      const hit=L.polyline(pv.ll,{weight:18,opacity:0});
+      const start=L.circleMarker(pv.ll[0],{radius:4,color:'#fff',weight:1.5,fillOpacity:1});
+      const x={ids,line,hit,start,group:L.layerGroup([line,hit,start]),bounds:line.getBounds()};
+      [hit,start].forEach(l=>{l.on('click',e=>{L.DomEvent.stop(e);openRideSheet(r.id);});l.bindTooltip(tip,{sticky:true,direction:'top'});});
+      hit.on('mouseover',()=>line.setStyle({weight:6,opacity:1}));
+      hit.on('mouseout',()=>line.setStyle(rideStyle(x)));
+      M.layers[r.id]=x;
     });
+    if(M.solo&&!rides.some(r=>rideRiders(r).includes(M.solo)))M.solo=null;
   }
-  renderMapFilter(new Set(rides.map(rideOwner)));
+  renderMapFilter(new Set(rides.flatMap(rideRiders)));
   showLayers();
   mapState(rides.length?'':'Zatiaľ žiadna jazda nemá GPX. Pridaj GPX pri jazde a trasa sa zobrazí tu.');
   fitMap();
