@@ -256,3 +256,10 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .map-chip.off i{background:#cfd9de}
 .map-chip.all{border-style:dashed;border-color:#9fb3bd}
 .ride-map.leaflet-container{font:inherit}
+
+/* ===== MAPA v18 ===== */
+.map-chip[aria-pressed="true"]{background:var(--c);color:#fff}
+.map-chip[aria-pressed="true"] i{background:#fff}
+.map-tip-riders{display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:4px}
+.map-tip-riders span{display:inline-flex;align-items:center;gap:4px}
+.map-tip-riders i{width:8px;height:8px;border-radius:50%}
