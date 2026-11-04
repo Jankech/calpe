@@ -1081,6 +1081,45 @@ navigate=function(...a){const res=_origNavigateMap(...a);setTimeout(()=>fitMap()
   document.addEventListener('click',e=>{if(document.body.classList.contains('nav-open')&&!nav.contains(e.target))setOpen(false);});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')setOpen(false);});
 })();
+
+/* ===== ODKAZY v22: calpe.jankech.cz/#jazdy alebo /jazdy ===== */
+const ROUTE_ALIAS={vydavky:'expenses',kupelna:'bathroom',cup:'cup',viac:'more',jazdy:'rides',drinky:'drinks',odznaky:'badges',poradie:'ranking',vyrovnanie:'settlement',platby:'payments'};
+const ROUTE_NAME=Object.fromEntries(Object.entries(ROUTE_ALIAS).map(([k,v])=>[v,k]));
+let routing=false;
+function setRoute(key){
+  if(routing||!S.tripId)return;
+  const h='#'+(ROUTE_NAME[key]||key);
+  if(location.hash!==h)history.replaceState(null,'',location.pathname+location.search+h);
+}
+function applyRoute(hash){
+  const slug=decodeURIComponent(String(hash||'').replace(/^#\/?/,'')).toLowerCase().trim();
+  if(!slug||slug.includes('='))return;
+  const key=ROUTE_ALIAS[slug]||slug;
+  const tabBtn=document.querySelector(`[data-tabs] button[data-tab="${CSS.escape(key)}"]`);
+  const view=$('view-'+key);
+  routing=true;
+  try{
+    if(tabBtn){const g=tabBtn.closest('[data-tabs]').dataset.tabs;navigate(g);switchTab(g,key);}
+    else if(view&&!view.hidden)navigate(key);
+    else return;
+  }finally{routing=false;}
+  setRoute(key);
+}
+const _origNavRoute=navigate;
+navigate=function(view,...a){const res=_origNavRoute(view,...a);setRoute(view);return res;};
+const _origTabRoute=switchTab;
+switchTab=function(group,tab,...a){const res=_origTabRoute(group,tab,...a);if(S.activeView===group)setRoute(tab);return res;};
+const _origSignInRoute=signIn;
+signIn=async function(...a){try{if(location.hash.length>1&&!location.hash.includes('='))sessionStorage.setItem('calpeRoute',location.hash);}catch(e){}return _origSignInRoute(...a);};
+const _origBootRoute=bootSession;
+bootSession=async function(...a){
+  await _origBootRoute(...a);
+  if(!S.tripId)return;
+  let saved='';try{saved=sessionStorage.getItem('calpeRoute')||'';sessionStorage.removeItem('calpeRoute');}catch(e){}
+  const h=location.hash.length>1&&!location.hash.includes('=')?location.hash:saved;
+  applyRoute(h);
+};
+window.addEventListener('hashchange',()=>applyRoute(location.hash));
   
 init();
 })();
