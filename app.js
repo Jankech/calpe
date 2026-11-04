@@ -1025,6 +1025,21 @@ const _origSwitchTabMap=switchTab;
 switchTab=function(...a){const res=_origSwitchTabMap(...a);setTimeout(()=>fitMap(),80);return res;};
 const _origNavigateMap=navigate;
 navigate=function(...a){const res=_origNavigateMap(...a);setTimeout(()=>fitMap(),80);return res;};
+
+/* ===== DESKTOP v19: menu v burgeri ===== */
+(function(){
+  const nav=$('bottomNav');if(!nav||$('navBurger'))return;
+  const btn=document.createElement('button');
+  btn.id='navBurger';btn.type='button';btn.className='nav-burger';
+  btn.setAttribute('aria-label','Menu');btn.setAttribute('aria-controls','bottomNav');btn.setAttribute('aria-expanded','false');
+  btn.innerHTML='<span></span><span></span><span></span>';
+  document.body.appendChild(btn);
+  const setOpen=o=>{document.body.classList.toggle('nav-open',o);btn.setAttribute('aria-expanded',String(o));};
+  btn.onclick=e=>{e.stopPropagation();setOpen(!document.body.classList.contains('nav-open'));};
+  nav.addEventListener('click',e=>{if(e.target.closest('button'))setOpen(false);});
+  document.addEventListener('click',e=>{if(document.body.classList.contains('nav-open')&&!nav.contains(e.target))setOpen(false);});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')setOpen(false);});
+})();
   
 init();
 })();
