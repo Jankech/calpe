@@ -263,3 +263,21 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .map-tip-riders{display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:4px}
 .map-tip-riders span{display:inline-flex;align-items:center;gap:4px}
 .map-tip-riders i{width:8px;height:8px;border-radius:50%}
+
+/* ===== DESKTOP v19: menu v burgeri ===== */
+.nav-burger{display:none}
+@media (min-width:721px){
+  .nav-burger{position:fixed;z-index:150;top:14px;right:16px;width:46px;height:46px;padding:0;border:0;border-radius:14px;background:rgba(255,255,255,.96);box-shadow:var(--shadow2);display:grid;place-content:center;gap:4px}
+  .nav-burger span{display:block;width:20px;height:2.4px;border-radius:2px;background:var(--navy);transition:.18s}
+  body.nav-open .nav-burger span:nth-child(1){transform:translateY(6.4px) rotate(45deg)}
+  body.nav-open .nav-burger span:nth-child(2){opacity:0}
+  body.nav-open .nav-burger span:nth-child(3){transform:translateY(-6.4px) rotate(-45deg)}
+  .bottom-nav{position:fixed!important;z-index:149;top:68px;right:16px;left:auto;bottom:auto;width:240px;max-width:calc(100vw - 32px);margin:0!important;display:none!important;grid-template-columns:1fr;gap:2px;padding:6px;border:1px solid #dce4e8;border-radius:18px;background:#fff;box-shadow:var(--shadow)}
+  body.nav-open .bottom-nav{display:grid!important}
+  .bottom-nav button{min-height:46px!important;display:flex!important;align-items:center;justify-content:flex-start;gap:10px;padding:5px 10px;font-size:13px!important;text-align:left}
+  .bottom-nav button[hidden]{display:none!important}
+  .bottom-nav .nav-icon-wrap{width:34px!important;height:34px!important;flex:0 0 auto}
+  .bottom-nav button.active .nav-icon-wrap{transform:none}
+  .hero-inner{padding-right:84px}
+  .toast{bottom:24px}
+}
