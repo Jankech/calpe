@@ -225,3 +225,17 @@ input[type=date]::-webkit-date-and-time-value,input[type=time]::-webkit-date-and
 .gpx-box{margin:6px 0 10px;display:grid;gap:8px;min-width:0}
 .gpx-detail{display:grid;gap:8px;margin:0 0 12px;min-width:0}
 .gpx-dl{justify-self:start;display:inline-flex;align-items:center;gap:5px;text-decoration:none}
+
+/* ===== GPX v15: mobil – náhľady vedľa seba, bez min/max v zozname ===== */
+/* náhľady vždy v jednom riadku (mriežka namiesto zalamovania) */
+.gpx-strip{display:grid;grid-template-columns:repeat(2,minmax(0,80px));gap:6px;align-items:start;justify-content:start;min-width:0;max-width:100%}
+.gpx-strip .gpx-thumb{flex:none;width:100%;min-width:0;height:auto;aspect-ratio:8/5}
+.gpx-strip .gpx-meta{grid-column:1/-1}
+/* veľká verzia (detail jazdy, nová jazda, úprava): dve rovnaké polovice */
+.gpx-strip.big{grid-template-columns:repeat(2,minmax(0,1fr));max-width:480px}
+.gpx-strip.big .gpx-thumb{max-width:none}
+/* mobil: v zozname jázd skryť min/max */
+@media (max-width:640px){
+  .gpx-strip:not(.big) .gpx-alt-max,
+  .gpx-strip:not(.big) .gpx-alt-min{display:none}
+}
