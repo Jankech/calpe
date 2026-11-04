@@ -811,6 +811,141 @@ renderSettlement=function(){
   hydrateAvatars(box);
 };
 
+/* ===== GPX v13: nahratie GPX, mapka trasy, farebný výškový profil ===== */
+const GPX_MAX=15*1024*1024;
+const gpxPath=id=>`trips/${S.tripId}/gpx/${id}.gpx`;
+const gpxPv=r=>{const v=r?.gpx_preview;if(!v)return null;try{return typeof v==='string'?JSON.parse(v):v;}catch{return null;}};
+function gpxParse(text){
+  const doc=new DOMParser().parseFromString(text,'application/xml');
+  if(doc.getElementsByTagName('parsererror').length)throw new Error('Súbor nie je platný GPX.');
+  let nodes=[...doc.getElementsByTagNameNS('*','trkpt')];if(!nodes.length)nodes=[...doc.getElementsByTagNameNS('*','rtept')];
+  const pts=nodes.map(n=>{const e=n.getElementsByTagNameNS('*','ele')[0];return{lat:parseFloat(n.getAttribute('lat')),lon:parseFloat(n.getAttribute('lon')),ele:e?parseFloat(e.textContent):NaN};}).filter(p=>isFinite(p.lat)&&isFinite(p.lon));
+  if(pts.length<2)throw new Error('GPX neobsahuje body trasy.');
+  return pts;
+}
+function gpxPreview(pts){
+  const rad=Math.PI/180,dist=[0];
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],dLa=(b.lat-a.lat)*rad,dLo=(b.lon-a.lon)*rad,h=Math.sin(dLa/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLo/2)**2;dist.push(dist[i-1]+12742*Math.asin(Math.min(1,Math.sqrt(h))));}
+  const km=dist[dist.length-1],eles=pts.map(p=>p.ele),fin=eles.filter(isFinite),hasEle=fin.length>pts.length*.5;
+  let gain=0;if(hasEle){let ref=null;for(const e of eles){if(!isFinite(e))continue;if(ref===null){ref=e;continue;}if(e-ref>=3){gain+=e-ref;ref=e;}else if(ref-e>=3)ref=e;}}
+  const kx=Math.cos(pts.reduce((s,p)=>s+p.lat,0)/pts.length*rad),xs=pts.map(p=>p.lon*kx),ys=pts.map(p=>-p.lat);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys),span=Math.max(maxX-minX,maxY-minY)||1e-9;
+  const N=Math.min(pts.length,160),idx=[...Array(N)].map((_,i)=>Math.round(i*(pts.length-1)/(N-1)));
+  return{v:1,km:Math.round(km*100)/100,gain:Math.round(gain),
+    w:Math.round((maxX-minX)/span*1000),h:Math.round((maxY-minY)/span*1000),
+    map:idx.map(i=>[Math.round((xs[i]-minX)/span*1000),Math.round((ys[i]-minY)/span*1000)]),
+    ele:hasEle?idx.filter(i=>isFinite(eles[i])).map(i=>[km?Math.round(dist[i]/km*1000):0,Math.round(eles[i])]):[],
+    min:hasEle?Math.round(Math.min(...fin)):null,max:hasEle?Math.round(Math.max(...fin)):null};
+}
+function gpxMapSvg(pv){
+  const W=80,H=50,P=4,s=Math.min((W-2*P)/Math.max(pv.w,1),(H-2*P)/Math.max(pv.h,1)),ox=(W-pv.w*s)/2,oy=(H-pv.h*s)/2;
+  const xy=([x,y])=>[(ox+x*s).toFixed(1),(oy+y*s).toFixed(1)],d=pv.map.map((p,i)=>(i?'L':'M')+xy(p).join(' ')).join(''),a=xy(pv.map[0]),b=xy(pv.map[pv.map.length-1]);
+  return `<svg viewBox="0 0 80 50" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa trasy"><path d="${d}" fill="none" stroke="#0f8fa3" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${a[0]}" cy="${a[1]}" r="2.1" fill="#348657" stroke="#fff" stroke-width=".8"/><circle cx="${b[0]}" cy="${b[1]}" r="2.1" fill="#c0453f" stroke="#fff" stroke-width=".8"/></svg>`;
+}
+const gradeColor=g=>!isFinite(g)?'#9aaab2':g<=-3?'#3b82c4':g<3?'#9aaab2':g<7?'#ff8a3d':'#d6455d';
+function gpxAltSvg(pv){
+  if(!pv.ele?.length||pv.ele.length<2)return '';
+  const W=80,T=12,B=42,lo=pv.min,hi=Math.max(pv.max,lo+10),X=d=>d/1000*W,Y=e=>B-(e-lo)/(hi-lo)*(B-T),f=v=>v.toFixed(1),m=(pv.km||0)*1000,E=pv.ele;
+  const runs=[];
+  for(let i=0;i<E.length-1;i++){
+    const dm=(E[i+1][0]-E[i][0])/1000*m,g=dm>1?(E[i+1][1]-E[i][1])/dm*100:NaN,c=gradeColor(g),last=runs[runs.length-1];
+    if(last&&last.c===c)last.e=i+1;else runs.push({c,s:i,e:i+1});
+  }
+  const parts=runs.map(r=>{const seg=E.slice(r.s,r.e+1),pts=seg.map(([d,e])=>f(X(d))+' '+f(Y(e)));
+    return `<path d="M${f(X(seg[0][0]))} 50 L${pts.join(' L')} L${f(X(seg[seg.length-1][0]))} 50 Z" fill="${r.c}" fill-opacity=".32" stroke="none"/><path d="M${pts.join(' L')}" fill="none" stroke="${r.c}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;}).join('');
+  return `<svg viewBox="0 0 80 50" preserveAspectRatio="none" role="img" aria-label="Výškový profil podľa sklonu">${parts}</svg>`;
+}
+function gpxStrip(pv,big=false){
+  if(!pv?.map?.length)return '';
+  return `<span class="gpx-strip${big?' big':''}"><span class="gpx-thumb gpx-map" title="Trasa">${gpxMapSvg(pv)}</span>${pv.ele?.length?`<span class="gpx-thumb gpx-alt" title="Výškový profil"><span class="gpx-alt-max">max ${round(pv.max)} m</span>${gpxAltSvg(pv)}<span class="gpx-alt-min">min ${round(pv.min)} m</span></span>`:''}${big?`<span class="gpx-meta">${round(pv.km,1)} km · ↗ ${round(pv.gain)} m</span>`:''}</span>`;
+}
+async function gpxRead(file){
+  if(!file)throw new Error('Vyber GPX súbor.');
+  if(file.size>GPX_MAX)throw new Error('GPX je príliš veľký (max 15 MB).');
+  if(!/\.gpx$/i.test(file.name||'')&&!/gpx|xml/i.test(file.type||''))throw new Error('Vyber súbor s príponou .gpx.');
+  const text=await file.text();return{text,pv:gpxPreview(gpxParse(text))};
+}
+async function gpxUpload(rideId,parsed){
+  toast('Nahrávam GPX…');
+  const path=gpxPath(rideId),blob=new Blob([parsed.text],{type:'application/gpx+xml'});
+  const up=await S.client.storage.from(MEDIA_BUCKET).upload(path,blob,{upsert:true,contentType:'application/gpx+xml',cacheControl:'60'});if(up.error)throw up.error;
+  const{error}=await S.client.from('rides').update({gpx_path:path,gpx_preview:parsed.pv}).eq('id',rideId).eq('trip_id',S.tripId);if(error)throw error;
+}
+async function gpxRemove(r){
+  if(r.gpx_path)await S.client.storage.from(MEDIA_BUCKET).remove([r.gpx_path]);
+  const{error}=await S.client.from('rides').update({gpx_path:null,gpx_preview:null}).eq('id',r.id).eq('trip_id',S.tripId);if(error)throw error;
+}
+/* nová jazda */
+S.newGpx=null;
+function resetNewGpx(){S.newGpx=null;if($('rideGpx'))$('rideGpx').value='';if($('rideGpxLabel'))$('rideGpxLabel').textContent='Pridať GPX';const pv=$('rideGpxPreview');if(pv){pv.hidden=true;pv.innerHTML='';}}
+function addGpxNewInput(){
+  const form=$('rideForm');if(!form||$('rideGpx'))return;
+  const w=document.createElement('div');w.className='gpx-new';
+  w.innerHTML=`<label class="secondary gpx-pick">${icon('route')} <span id="rideGpxLabel">Pridať GPX</span><input id="rideGpx" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" hidden></label><div id="rideGpxPreview" class="gpx-new-preview" hidden></div>`;
+  form.insertBefore(w,form.querySelector('button[type=submit]'));
+  $('rideGpx').onchange=async e=>{const f=e.target.files?.[0];if(!f){resetNewGpx();return;}
+    $('rideGpxLabel').textContent='Načítavam GPX…';
+    try{const parsed=await gpxRead(f);S.newGpx={file:f,parsed};$('rideGpxLabel').textContent='✓ '+f.name;
+      const box=$('rideGpxPreview');box.innerHTML=gpxStrip(parsed.pv,true);box.hidden=false;
+      if(!$('rideKm').value&&parsed.pv.km)$('rideKm').value=parsed.pv.km.toFixed(1);
+      if(!$('rideElevation').value&&parsed.pv.gain)$('rideElevation').value=parsed.pv.gain;
+      toast(`GPX načítaný: ${round(parsed.pv.km,1)} km`);
+    }catch(err){resetNewGpx();toast(err.message,true);}};
+}
+const _origSaveNewRideGpx=saveNewRide;
+saveNewRide=async function(e){
+  const g=S.newGpx,before=new Set((S.allRides||[]).map(r=>r.id));
+  await _origSaveNewRideGpx(e);
+  if(!g)return;
+  const created=(S.allRides||[]).filter(r=>!before.has(r.id)).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
+  if(!created.length)return;
+  try{await gpxUpload(created[0].id,g.parsed);resetNewGpx();await loadAllData();toast('Jazda aj GPX uložené.');}
+  catch(err){toast('Jazda uložená, ale GPX nie: '+err.message,true);}
+};
+/* zoznam jázd */
+const _origRenderRidesGpx=renderRides;
+renderRides=function(...a){
+  const res=_origRenderRidesGpx(...a);
+  S.rides.forEach(r=>{const pv=gpxPv(r);if(!pv)return;const b=document.querySelector(`#rideFeed .ride-open[data-id="${r.id}"]`);if(b&&!b.querySelector('.gpx-strip'))b.insertAdjacentHTML('beforeend',gpxStrip(pv));});
+  return res;
+};
+/* detail jazdy */
+const _origRenderRideSheetGpx=renderRideSheet;
+renderRideSheet=function(...a){
+  const res=_origRenderRideSheetGpx(...a);
+  if(S.rideEditing)return res;
+  const r=S.rides.find(x=>x.id===S.editRideId),pv=gpxPv(r),hero=document.querySelector('#rideSheetContent .ride-detail-hero');
+  if(!r||!pv||!hero)return res;
+  hero.insertAdjacentHTML('afterend',`<div class="gpx-detail">${gpxStrip(pv,true)}<a class="secondary compact gpx-dl" id="gpxDownload" hidden>${icon('route')} Stiahnuť GPX</a></div>`);
+  if(r.gpx_path)S.client.storage.from(MEDIA_BUCKET).createSignedUrl(r.gpx_path,3600,{download:`${(r.route||'jazda').replace(/[^\w\- ]+/g,'').trim()||'jazda'}.gpx`}).then(({data})=>{const l=$('gpxDownload');if(l&&data?.signedUrl){l.href=data.signedUrl;l.hidden=false;}});
+  return res;
+};
+/* úprava jazdy */
+function renderGpxEditBox(r){
+  const box=$('gpxEditBox');if(!box)return;const pv=gpxPv(r);
+  box.innerHTML=`<label>GPX trasa</label>${pv?gpxStrip(pv,true):'<div class="empty">Bez GPX</div>'}<div class="media-actions"><label class="secondary gpx-pick">${icon('route')} <span id="gpxEditLabel">${pv?'Vymeniť GPX':'Pridať GPX'}</span><input id="gpxEditFile" type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" hidden></label>${pv?`<button type="button" class="danger" id="gpxEditRemove">${icon('trash')} Odstrániť GPX</button>`:''}</div>`;
+  $('gpxEditFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;$('gpxEditLabel').textContent='Načítavam GPX…';
+    try{const parsed=await gpxRead(f);await gpxUpload(r.id,parsed);await loadAllData();renderGpxEditBox(S.rides.find(x=>x.id===r.id)||r);toast('GPX uložený.');}
+    catch(err){$('gpxEditLabel').textContent=pv?'Vymeniť GPX':'Pridať GPX';toast(err.message,true);}};
+  if($('gpxEditRemove'))$('gpxEditRemove').onclick=async()=>{if(!confirm('Odstrániť GPX z tejto jazdy?'))return;
+    try{await gpxRemove(r);await loadAllData();renderGpxEditBox(S.rides.find(x=>x.id===r.id)||{...r,gpx_path:null,gpx_preview:null});toast('GPX odstránený.');}catch(err){toast(err.message,true);}};
+}
+const _origRenderRideEditGpx=renderRideEdit;
+renderRideEdit=function(r,...a){
+  const res=_origRenderRideEditGpx(r,...a);
+  const form=$('rideEditForm'),act=form?.querySelector('.sheet-actions');
+  if(form&&act&&!$('gpxEditBox')){const box=document.createElement('div');box.id='gpxEditBox';box.className='gpx-box';form.insertBefore(box,act);renderGpxEditBox(r);}
+  return res;
+};
+/* zmazanie jazdy zmaže aj GPX */
+const _origDeleteRideGpx=deleteRide;
+deleteRide=async function(...a){
+  const r=S.rides.find(x=>x.id===S.editRideId),p=r?.gpx_path;
+  await _origDeleteRideGpx(...a);
+  if(p&&!(S.allRides||[]).some(x=>x.id===r.id))S.client.storage.from(MEDIA_BUCKET).remove([p]).catch(()=>{});
+};
+const _origRenderAllGpx=renderAll;
+renderAll=function(...a){const res=_origRenderAllGpx(...a);addGpxNewInput();return res;};
   
 init();
 })();
